@@ -1,0 +1,70 @@
+﻿@code {
+    private bool isVisible = false;
+    private string message = "";
+    private string icon = "";
+    private string modalColor = "bg-danger"; // Default merah
+    private EventCallback OnOkClicked { get; set; } // EventCallback untuk tombol OK
+    private string okButtonText = "OK"; // Teks untuk tombol OK
+    private string cancelButtonText = "Batal"; // Teks untuk tombol Batal
+    private bool showCancelButton = true; // Kontrol visibilitas tombol Batal
+
+    public void Show(string msg, string iconClass, int isError, EventCallback onOk = default, string okText = "OK", bool showCancel = true, string cancelText = "Batal")
+    {
+        message = msg;
+        icon = iconClass;
+        OnOkClicked = onOk;
+        okButtonText = okText;
+        showCancelButton = showCancel;
+        cancelButtonText = cancelText;
+
+        modalColor = isError switch
+        {
+            0 => "bg-success",  // Hijau untuk sukses
+            1 => "bg-danger",   // Merah untuk error
+            2 => "bg-warning",  // Orange untuk warning
+            _ => "bg-danger"
+        };
+
+        isVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleOkClicked()
+    {
+        isVisible = false;
+        if (OnOkClicked.HasDelegate)
+        {
+            await OnOkClicked.InvokeAsync();
+        }
+    }
+
+    private void CloseModal()
+    {
+        isVisible = false;
+        StateHasChanged();
+    }
+}
+
+@if (isVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header @modalColor text-white">
+                    <h5 class="modal-title"><i class="@icon"></i> Notifikasi</h5>
+                    <button type="button" class="btn-close text-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>@message</p>
+                </div>
+                <div class="modal-footer">
+                    @if (showCancelButton)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">@cancelButtonText</button>
+                    }
+                    <button type="button" class="btn btn-primary" @onclick="HandleOkClicked">@okButtonText</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

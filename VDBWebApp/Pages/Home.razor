@@ -1,0 +1,192 @@
+﻿@page "/home"
+
+@using System.ComponentModel.DataAnnotations
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using Models
+
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
+@inject Services.DashboardServices DashboardService
+
+<PageTitle>Home</PageTitle>
+
+@if (dashboardDataList != null && dashboardDataList.Any())
+{
+    <div class="dashboard-container">
+        <div class="dashboard-card @(activeStatus == "NEW" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "NEW"))">
+            <h3>New</h3>
+            <p class="count">@dashboardDataList.First().countnew</p>
+        </div>
+        <div class="dashboard-card @(activeStatus == "CANCELED" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "CANCELED"))">
+            <h3>Canceled</h3>
+            <p class="count">@dashboardDataList.First().countcanceled</p>
+        </div>
+        <div class="dashboard-card @(activeStatus == "PAYMENT" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "PAYMENT"))">
+            <h3>Payment</h3>
+            <p class="count">@dashboardDataList.First().countpayment</p>
+        </div>
+        <div class="dashboard-card @(activeStatus == "PROCESS" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "PROCESS"))">
+            <h3>Process</h3>
+            <p class="count">@dashboardDataList.First().countprocess</p>
+        </div>
+        <div class="dashboard-card @(activeStatus == "CLOSED" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "CLOSED"))">
+            <h3>Closed</h3>
+            <p class="count">@dashboardDataList.First().countclosed</p>
+        </div>
+    </div>
+
+
+    @if (orderDetailsList != null)
+    {
+        <div class="order-details-container">
+            @foreach (var order in orderDetailsList)
+            {
+                Console.WriteLine(order.ordercode);
+                <div class="order-card">
+                    <p class="order-code">@order.ordercode</p>
+                    <p class="order-code">@order.duration</p>
+                    <p class="order-date">@order.orderdate</p>
+                    <div class="order-status-container">
+                        <p class="order-status-label">Status:</p>
+                        <p class="order-status @GetOrderStatusClass(order.orderstatus)">@order.orderstatus</p>
+                    </div>
+                    <p class="order-desc">@order.orderdesc</p>
+                    <p class="order-amount">@order.orderamount</p>
+                    <p class="cust-store">@order.custstore</p>
+                    <p class="payment-note">@order.paymentnotename</p>
+                </div>
+            }
+        </div>
+    }
+    else if (orderDetailsErrorMessage != null)
+    {
+        <p class="alert alert-danger">Error loading order details: @orderDetailsErrorMessage</p>
+    }
+}
+else
+{
+    <p>Loading dashboard data...</p>
+}
+
+@code {
+
+    private int personid;
+    private string usertype;
+    private string status;
+    private bool isNewListOpen = false;
+    private bool isCanceledistOpen = false;
+    private bool isPaymentListOpen = false; 
+    private bool isProcessListOpen = false;
+    private bool isClosedListOpen = false;
+    private string? activeStatus; // Untuk melacak card yang aktif
+
+    private List<OrderDetail>? orderDetailsList;
+    private string? orderDetailsErrorMessage;
+
+    private List<DashboardData>? dashboardDataList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        usertype = GlobalVariables.usertype;
+        personid = usertype?.ToLower() == "admin" ? 0 : GlobalVariables.personid ?? 0;
+        status = "New";
+
+        var Data = await DashboardService.GetDashboardHeaders(personid);
+        var Detail = await DashboardService.GetDashboardHeaderDetails(personid, status);
+        Console.WriteLine(Detail);
+        StateHasChanged();
+        try
+        {
+            if (!string.IsNullOrEmpty(Data))
+            {
+                dashboardDataList = JsonSerializer.Deserialize<List<DashboardData>>(Data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+
+                // Otomatis klik (panggil LoadOrderDetails untuk "NEW") saat komponen diinisialisasi
+                if (dashboardDataList != null && dashboardDataList.Any())
+                {
+                    await LoadOrderDetails(GlobalVariables.personid ?? 0, "NEW");
+                    StateHasChanged();
+                }
+            
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error accessing local storage: {ex.Message}");
+            // Handle error appropriately
+        }
+    }
+
+    private async Task LoadOrderDetails(int personId, string status)
+    {
+        orderDetailsList = null;
+        orderDetailsErrorMessage = null;
+        StateHasChanged(); // Re-render untuk menampilkan pesan loading
+
+        try
+        {
+            var orderDetailsJson = await DashboardService.GetDashboardHeaderDetails(personId, status);
+            if (!string.IsNullOrEmpty(orderDetailsJson))
+            {
+                orderDetailsList = JsonSerializer.Deserialize<List<OrderDetail>>(orderDetailsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                StateHasChanged();
+            }
+            else
+            {
+                orderDetailsErrorMessage = "No order details found for this status.";
+                StateHasChanged();
+            }
+        }
+        catch (JsonException ex)
+        {
+            orderDetailsErrorMessage = $"Failed to deserialize order details: {ex.Message}";
+            Console.Error.WriteLine(orderDetailsErrorMessage);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            orderDetailsErrorMessage = $"An error occurred while fetching order details: {ex.Message}";
+            Console.Error.WriteLine(orderDetailsErrorMessage);
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDashboardCardClick(int personId, string status)
+    {
+        activeStatus = status; // Set status aktif
+        await LoadOrderDetails(personId, status); // Muat detail order
+    }
+
+    private string GetOrderStatusClass(string status)
+    {
+        return status?.ToUpper() switch
+        {
+            "NEW" => "order-status",
+            "PAYMENT" => "order-status-payment",
+            "PROCESS" => "order-status-process",
+            _ => "order-status-default", // Class default jika status tidak dikenali
+        };
+    }
+
+    public class DashboardData
+    {
+        public string? countnew { get; set; }
+        public string? countcanceled { get; set; }
+        public string? countpayment { get; set; }
+        public string? countprocess { get; set; }
+        public string? countclosed { get; set; }
+    }
+    public class OrderDetail
+    {
+        public string? ordercode { get; set; }
+        public string? orderdate { get; set; }
+        public string? duration { get; set; }
+        public string? orderstatus { get; set; }
+        public string? orderdesc { get; set; }
+        public string? orderamount { get; set; }
+        public string? custstore { get; set; }
+        public string? paymentnotename { get; set; }
+    }
+}

@@ -1,0 +1,117 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid d-flex justify-content-center">
+        <a class="navbar-brand" href="/home">
+            <img src="images/logoVDB.png" alt="Logo Aplikasi" height="30" />
+        </a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable " @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <div class="nav-link master-menu-link" @onclick="ToggleMasterSubMenu">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Master @if (isMasterSubMenuOpen)
+                {
+                    <span class="oi oi-chevron-top px-2" aria-hidden="true"></span>
+                }
+                else
+                {
+                    <span class="oi oi-chevron-bottom px-2" aria-hidden="true"></span>
+                }
+            </div>
+            @if (isMasterSubMenuOpen)
+            {
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="products">
+                        <span class="oi oi-box" aria-hidden="true"></span> Product
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="productprices">
+                        <span class="oi oi-tag" aria-hidden="true"></span> Product Price
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="highlightproducts">
+                        <span class="oi oi-star" aria-hidden="true"></span> Highlight Product
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="customers">
+                        <span class="oi oi-people" aria-hidden="true"></span> Customer
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="customercategories">
+                        <span class="oi oi-list" aria-hidden="true"></span> Cust Category
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="couriers">
+                        <span class="oi oi-list" aria-hidden="true"></span> Courier
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="paymentnotes">
+                        <span class="oi oi-credit-card" aria-hidden="true"></span> Payment Note
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="productcategories">
+                        <span class="oi oi-folder" aria-hidden="true"></span> Product Category
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="banners">
+                        <span class="oi oi-image" aria-hidden="true"></span> Banner
+                    </NavLink>
+                </div>
+            }
+        </div>
+        <div class="nav-item px-3">
+            <div class="nav-link master-menu-link" @onclick="ToggleTransactionSubMenu">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Transaction @if (isMasterSubMenuOpen)
+                {
+                    <span class="oi oi-chevron-top px-2" aria-hidden="true"></span>
+                }
+                else
+                {
+                    <span class="oi oi-chevron-bottom px-2" aria-hidden="true"></span>
+                }
+            </div>
+            @if (isTransactionSubMenuOpen)
+            {
+                <div class="nav-item px-3 sub-menu">
+                    <NavLink class="nav-link" href="home">
+                        <span class="oi oi-list" aria-hidden="true"></span> Order
+                    </NavLink>
+                </div>
+            }
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+    private bool isMasterSubMenuOpen = false;
+    private bool isTransactionSubMenuOpen = false;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private void ToggleMasterSubMenu()
+    {
+        isMasterSubMenuOpen = !isMasterSubMenuOpen;
+    }
+    private void ToggleTransactionSubMenu()
+    {
+        isTransactionSubMenuOpen = !isTransactionSubMenuOpen;
+    }
+}

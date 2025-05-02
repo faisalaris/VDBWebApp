@@ -1,0 +1,94 @@
+﻿:root {
+    --light-brown: #F0D5B6;
+    --brown: #CF9D77;
+    --dark-brown: #593f29;
+    --warm-white: #FCFAEE;
+}
+
+body {
+    background-color: var(--brown); /* Latar belakang body */
+    display: flex;
+    justify-content: center; /* Tengah horizontal */
+    align-items: center; /* Tengah vertikal */
+    min-height: 100vh; /* Memastikan menutupi seluruh tinggi viewport */
+    margin: 0; /* Reset margin default body */
+}
+
+.logo-container {
+    text-align: center; /* Membuat logo berada di tengah horizontal */
+    margin-bottom: 20px; /* Memberikan jarak antara logo dan form */
+}
+
+    .logo-container img {
+        max-width: 150px; /* Mengatur lebar maksimum logo */
+        height: auto; /* Mempertahankan aspek rasio */
+    }
+
+.login-container {
+    background-color: var(--warm-white); /* Background form menjadi putih */
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(var(--dark-brown), 0.2);
+    width: 400px;
+    max-width: 95%;
+    border: 2px solid var(--dark-brown); /* Tambahkan border */
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px; /* Jarak lebih besar dari judul ke form */
+    color: var(--dark-brown);
+}
+
+.form-group {
+    margin-bottom: 20px; /* Jarak antar input group */
+}
+
+    .form-group label {
+        display: block; /* Label di atas input */
+        color: var(--dark-brown);
+        margin-bottom: 5px; /* Jarak antara label dan input */
+        font-weight: bold;
+    }
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--brown);
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1rem;
+    outline: none; /* Menghilangkan outline default browser */
+    transition: border-color 0.3s ease; /* Transisi untuk efek hover/focus */
+}
+
+    .form-control:focus {
+        border-color: var(--dark-brown); /* Mengubah warna border saat fokus */
+        box-shadow: 0 0 5px rgba(var(--dark-brown), 0.5); /* Menambahkan sedikit shadow saat fokus */
+    }
+
+.btn-primary {
+    width: 100%; /* Tombol selebar container */
+    padding: 12px;
+    background-color: var(--brown);
+    color: var(--warm-white);
+    border: none;
+    border-radius: 6px; /* Sudut tombol lebih membulat */
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+    .btn-primary:hover {
+        background-color: var(--dark-brown);
+    }
+
+.validation-summary {
+    color: red;
+    margin-top: 15px;
+}
+
+.validation-message {
+    color: red;
+    font-size: 0.9em;
+}

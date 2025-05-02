@@ -1,0 +1,127 @@
+﻿@inherits LayoutComponentBase
+
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using Models
+
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+
+
+<WarningModal @ref="warningModal" />
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 bg-warm-white">
+            @if (!string.IsNullOrEmpty(loggedInUsername))
+            {
+                <div class="user-info">
+                    <span class="me-2">@loggedInUsername</span>
+                    <span class="oi oi-person user-icon" aria-hidden="true" @onclick="ToggleUserMenu"></span>
+                    @if (isUserMenuOpen)
+                    {
+                        <div class="user-menu">
+                            <NavLink class="dropdown-item" href="profile">
+                                User Profile
+                            </NavLink>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item" @onclick="ShowLogoutConfirmation">
+                                Log Out
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+            }
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+
+    <ActionModal @ref="logoutConfirmationModal" />
+</div>
+
+@code {
+    private string? loggedInUsername;
+    private bool isLoggedIn = false;
+    private WarningModal warningModal;
+    private bool isUserMenuOpen = false;
+    private ActionModal? logoutConfirmationModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var userJson = await LocalStorage.GetItemAsStringAsync("user");
+            if (!string.IsNullOrEmpty(userJson))
+            {
+                try
+                {
+                    var userData = JsonSerializer.Deserialize<List<UserData>>(userJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (userData != null && userData.Count > 0)
+                    {
+                        loggedInUsername = userData[0]?.username;
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Console.WriteLine($"Error deserializing user data: {ex.Message}");
+                    // Handle error appropriately
+                }
+            }
+            else
+            {
+                warningModal.Show("Anda belum login, silakan login terlebih dahulu.", "bi bi-exclamation-circle", 1);
+                await Task.Delay(1000); // Tunggu 1 detik sebelum redirect
+                Navigation.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error accessing local storage: {ex.Message}");
+            // Handle error appropriately
+        }
+    }
+
+    private void ToggleUserMenu()
+    {
+        isUserMenuOpen = !isUserMenuOpen;
+    }
+
+    private async Task Logout()
+    {
+        // Implementasi logika logout Anda di sini
+        await LocalStorage.RemoveItemAsync("user"); // Contoh: Hapus info user dari local storage
+        loggedInUsername = null;
+        isUserMenuOpen = false;
+        GlobalVariables.ResetAll();
+        Navigation.NavigateTo("/", forceLoad: true); // Arahkan ke halaman login dengan reload
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        logoutConfirmationModal?.Show("Apakah Anda yakin ingin keluar?", "oi oi-warning", 2, EventCallback.Factory.Create(this, Logout), "Keluar", true, "Batal");
+        isUserMenuOpen = false; // Tutup dropdown setelah klik logout
+    }
+
+    // Class untuk merepresentasikan struktur objek JSON
+    public class UserData
+    {
+        public string? result { get; set; }
+        public string? username { get; set; }
+        public string? usertype { get; set; }
+        public string? userlevel { get; set; }
+        public string? personid { get; set; }
+        public string? category { get; set; }
+        public string? paymentnotename { get; set; }
+    }
+}

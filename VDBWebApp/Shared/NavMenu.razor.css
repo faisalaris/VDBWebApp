@@ -1,0 +1,90 @@
+:root {
+    --light-brown: #F0D5B6;
+    --brown: #CF9D77;
+    --dark-brown: #593f29;
+    --warm-white: #FCFAEE;
+}
+
+/* Gaya untuk link menu Master */
+.nav-link.master-menu-link {
+    color: var(--dark-brown) !important; /* Atau warna lain dari root Anda */
+}
+
+    /* Anda mungkin perlu menimpa gaya hover juga */
+    .nav-link.master-menu-link:active {
+        color: rgba(var(--dark-brown), 0.25) !important; /* Contoh warna hover */
+    }
+    .nav-link.master-menu-link:hover {
+        color: rgba(var(--dark-brown), 0.1) !important; /* Contoh warna hover */
+    }
+.navbar-toggler {
+    background-color: rgba(var(--dark-brown), 0.1); /* Warna background tombol toggler */
+}
+
+.top-row {
+    height: 3.5rem;
+    background-color: var(--brown) !important; /* Tambahkan !important untuk prioritas */
+}
+
+.navbar-brand {
+    font-size: 1.1rem;
+    color: var(--dark-brown); /* Warna teks brand */
+}
+
+
+.oi {
+    width: 2rem;
+    font-size: 1.1rem;
+    vertical-align: text-top;
+    top: -2px;
+    color: var(--dark-brown); /* Warna ikon */
+}
+
+.nav-item {
+    font-size: 0.9rem;
+    padding-bottom: 0.5rem;
+}
+
+    .nav-item:first-of-type {
+        padding-top: 1rem;
+    }
+
+    .nav-item:last-of-type {
+        padding-bottom: 1rem;
+    }
+
+    .nav-item ::deep a {
+        color: var(--dark-brown); /* Warna teks link */
+        border-radius: 4px;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+    }
+
+        .nav-item ::deep a.active {
+            background-color: rgba(var(--dark-brown), 0.25); /* Warna background link aktif */
+            color: var(--dark-brown); /* Warna teks link aktif */
+        }
+
+        .nav-item ::deep a:hover {
+            background-color: rgba(var(--dark-brown), 0.1); /* Warna background link saat hover */
+            color: var(--light-brown); /* Warna teks link saat hover */
+        }
+
+@media (min-width: 641px) {
+    .navbar-toggler {
+        display: none;
+    }
+
+    .collapse {
+        /* Never collapse the sidebar for wide screens */
+        display: block;
+    }
+
+    .nav-scrollable {
+        /* Allow sidebar to scroll for tall menus */
+        height: calc(100vh - 3.5rem);
+        overflow-y: auto;
+    }
+}
