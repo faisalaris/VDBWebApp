@@ -1,0 +1,280 @@
+﻿@page "/productdetail/"
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.ProductServices ProductService
+@inject Services.GensetServices GensetService
+
+<h1>Product Detail</h1>
+
+@if (product != null)
+{
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-4">
+                @if (!string.IsNullOrEmpty(product.thumbnail))
+                {
+                    <img src="@product.thumbnail" alt="@product.item_name" class="img-fluid rounded mb-3" />
+                }
+                else
+                {
+                    <img src="/images/VDBDefault.jpg" alt="@product.item_name" class="img-fluid rounded mb-3" />
+                }
+            </div>
+            <div class="col-md-8">
+                <EditForm Model="@product" OnValidSubmit="@ShowSaveConfirmation">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label for="item_code" class="form-label">Item Code</label>
+                        <InputText id="item_code" class="form-control" @bind-Value="product.item_code" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="item_name" class="form-label">Item Name</label>
+                        <InputText id="item_name" class="form-control" @bind-Value="product.item_name" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="thumbnail" class="form-label">Thumbnail</label>
+                        <InputText id="thumbnail" class="form-control" @bind-Value="product.thumbnail" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="item_price" class="form-label">Item Price</label>
+                        <InputNumber id="item_price" class="form-control" @bind-Value="itemPrice" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="msrp" class="form-label">MSRP</label>
+                        <InputNumber id="msrp" class="form-control" @bind-Value="msrp" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="item_stock" class="form-label">Item Stock</label>
+                        <InputNumber id="item_stock" class="form-control" @bind-Value="itemStock" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="isactive" class="form-label">Is Active</label>
+                        <InputSelect id="isactive" class="form-select" @bind-Value="product.isactive">
+                            <option value="True">Aktif</option>
+                            <option value="False">Tidak Aktif</option>
+                        </InputSelect>
+                    </div>
+                    <div class="mb-3">
+                        <label for="brand_name" class="form-label">Brand Name</label>
+                        <InputText id="brand_name" class="form-control" @bind-Value="product.brand_name" />
+                    </div>
+            
+                    @* Ganti InputText dengan select dan input type="text"*@
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">Category</label>
+                        <select id="category_id" class="form-select"  @bind="product.category_id">
+                            <option value="">Select Category</option>
+                            @foreach (var category in filteredCategories)
+                            {
+                                <option value="@category.gcode">@category.gcode - @category.gname</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="remark" class="form-label">Remark</label>
+                        <InputTextArea id="remark" class="form-control" @bind-Value="product.remark" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="starthighlight" class="form-label">Start Highlight</label>
+                        <InputText id="starthighlight" class="form-control" @bind-Value="product.starthighlight" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="endhighlight" class="form-label">End Highlight</label>
+                        <InputText id="endhighlight" class="form-control" @bind-Value="product.endhighlight" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="GoBack">Back</button>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+else if (errorMessage != null)
+{
+    <p class="alert alert-danger">@errorMessage</p>
+}
+else
+{
+    <p>Loading Product Details...</p>
+}
+
+<ActionModal @ref="SaveConfirmationModal" />
+
+@if (isLoading)
+{
+    <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
+}
+
+@code {
+
+    private Product? product;
+    private string? errorMessage;
+
+    private List<Category> categories = new List<Category>();
+    private List<Category> _filteredCategories = new List<Category>();
+    private string categorySearchTerm = "";
+    private bool showCategories = false;
+    private ActionModal? SaveConfirmationModal;
+    private bool isLoading = false;
+
+    int itemPrice = 0;
+    int msrp = 0;
+    int itemStock = 0;
+
+    private string IsActiveString
+    {
+        get => product?.isactive == "True" ? "True" : "False";
+        set => product.isactive = value == "True" ? "1" : "0";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var itemId = await LocalStorage.GetItemAsync<string>("selectedProductId");
+        var Data = await ProductService.GetProduct(itemId ?? "");
+        var category = await GensetService.GetListCategory();
+
+
+        try
+        {
+
+            if (!string.IsNullOrEmpty(Data))
+            {
+
+            }
+            // Simulasikan pengambilan data dari API (ganti dengan logika Anda)
+            await Task.Delay(500);
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            product = JsonSerializer.Deserialize<List<Product>>(Data, options)?.FirstOrDefault();
+            product.item_id = itemId;
+
+            itemPrice = int.Parse(product.item_price);
+            msrp = int.Parse(product.msrp);
+            itemStock = int.Parse(product.item_stock);
+
+            //Console.WriteLine(product.item_id);
+            categories = categories = JsonSerializer.Deserialize<List<Category>>(category, options) ?? new List<Category>();
+            filteredCategories = categories;
+
+            if (product == null)
+            {
+                errorMessage = "Product not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading product details: {ex.Message}";
+            Console.WriteLine(ex);
+        }
+    }
+
+    private async Task SaveProduct()
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+
+        product.item_price = itemPrice.ToString();
+        product.msrp = msrp.ToString();
+        product.item_stock = itemStock.ToString();
+
+        var Data = await ProductService.SaveProductService(product);
+
+        // Implementasikan logika penyimpanan produk di sini (misalnya, call API)
+        Console.WriteLine("Saving product...");
+        Console.WriteLine(JsonSerializer.Serialize(product)); // Log data yang akan disimpan
+
+        // Simulasikan penyimpanan
+        await Task.Delay(1000);
+        isLoading = false;
+
+        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok",false);
+    }
+
+
+    private void ShowSaveConfirmation()
+    {
+        SaveConfirmationModal?.Show("Apakah Anda yakin ingin Menyimpan?", "oi oi-warning", 2, EventCallback.Factory.Create(this, SaveProduct), "Save", true, "Cancel");
+    }
+
+    private void SuccessConfirmation()
+    {
+        Navigation.NavigateTo("/products");
+    }
+
+    private void SearchCategories(ChangeEventArgs e)
+    {
+        categorySearchTerm = e.Value?.ToString() ?? "";
+        if (string.IsNullOrEmpty(categorySearchTerm))
+        {
+            filteredCategories = categories;
+        }
+        else
+        {
+            filteredCategories = categories.Where(c => c.gname.Contains(categorySearchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+    }
+
+    private List<Category> filteredCategories
+    {
+        get => _filteredCategories;
+        set
+        {
+            _filteredCategories = value;
+            StateHasChanged(); // Force re-render when filteredCategories changes
+        }
+    }
+
+    private async Task OnCategorySelected(ChangeEventArgs e)
+    {
+        if (e.Value != null)
+        {
+            product.category_id = e.Value.ToString();
+
+            Console.WriteLine($"Selected Category ID: {product.category_id}");
+            // product.category_name = allCategories.FirstOrDefault(c => c.gcode == e.Value.ToString())?.gname;
+
+            // Force re-render after category selection
+            StateHasChanged();
+        }
+    }
+
+    private void ShowCategories()
+    {
+        showCategories = true;
+    }
+
+    private void HideCategories()
+    {
+        showCategories = false;
+    }
+
+    private void SelectCategory(string gcode)
+    {
+        product.category_id = gcode;
+        categorySearchTerm = categories.FirstOrDefault(c => c.gcode == gcode)?.gname;
+        HideCategories();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/products"); // Arahkan kembali ke halaman produk
+    }
+
+
+    public class Category
+    {
+        public string? gcode { get; set; }
+        public string? gname { get; set; }
+    }
+}

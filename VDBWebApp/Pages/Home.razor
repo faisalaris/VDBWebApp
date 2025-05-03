@@ -95,7 +95,6 @@ else
 
         var Data = await DashboardService.GetDashboardHeaders(personid);
         var Detail = await DashboardService.GetDashboardHeaderDetails(personid, status);
-        Console.WriteLine(Detail);
         StateHasChanged();
         try
         {

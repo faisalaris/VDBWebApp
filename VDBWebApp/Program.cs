@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using VDBWebApp;
 using VDBWebApp.Services;
+using Radzen;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -24,5 +25,12 @@ builder.Services.AddScoped(sp =>
 
 builder.Services.AddScoped<LoginServices>();
 builder.Services.AddScoped<DashboardServices>();
+builder.Services.AddScoped<ProductServices>();
+builder.Services.AddScoped<GensetServices>();
+
+builder.Services.AddScoped<DialogService>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<TooltipService>();
+builder.Services.AddScoped<ContextMenuService>();
 
 await builder.Build().RunAsync();

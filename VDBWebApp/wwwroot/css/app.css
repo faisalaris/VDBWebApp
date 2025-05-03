@@ -509,6 +509,232 @@ a, .btn-link {
 
 /*********************************************End CSS Untuk Card di Home**************************************************/
 
+/*************************************************** CSS untuk Card Product ***********************************************/
+
+/* Gaya untuk halaman produk secara keseluruhan */
+
+.product-container {
+    width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    font-family: Roboto, sans-serif;
+    background-color: var(--warm-white); /* Atau warna latar belakang yang sesuai */
+}
+
+/* Gaya untuk logo (jika ada) */
+.product-logo {
+    width: 200px;
+    height: 200px;
+    border: none;
+    background-color: transparent;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+/* Gaya untuk judul halaman */
+.product-page-title {
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+    color: var(--dark-brown); /* Atau warna yang sesuai */
+}
+
+/* Gaya untuk input pencarian */
+.product-search-input {
+    width: 100%;
+    padding: 10px 40px 10px 40px;
+    font-size: 16px;
+    background-image: url('/images/Material/search.png'); /* Jika Anda memiliki ikon pencarian */
+    background-position: 10px center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    margin-bottom: 20px;
+    margin-left: auto; /* Tambahkan ini */
+    margin-right: auto; /* Dan ini untuk pemusatan jika tidak pakai flexbox */
+    border: 1px solid var(--brown); /* Atau gaya border yang sesuai */
+    border-radius: 5px;
+}
+
+/* Gaya untuk grid produk */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    justify-content: center;
+}
+
+/* Gaya untuk setiap kartu produk */
+.product-card {
+    border: 1px solid var(--brown); /* Atau gaya border yang sesuai */
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 2px 2px 10px rgba(var(--dark-brown), 0.1);
+    background-color: var(--warm-white); /* Atau warna latar belakang yang sesuai */
+}
+
+/* Gaya untuk gambar produk */
+.product-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+/* Gaya untuk judul produk */
+.product-title {
+    font-size: 22px;
+    font-weight: bold;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    color: var(--dark-brown); /* Atau warna yang sesuai */
+    margin: 6px 0;
+}
+
+/* Gaya untuk SKU produk */
+.product-sku {
+    font-size: 12px;
+    font-weight: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    color: var(--brown); /* Atau warna yang sesuai */
+    margin: 4px 0;
+}
+
+/* Gaya untuk harga produk */
+.product-price {
+    font-size: 16px;
+    margin: 0px;
+    color: var(--dark-brown); /* Atau warna yang sesuai */
+}
+
+/* Gaya untuk teks "No products found" */
+.product-no-results {
+    font-size: 20px;
+    color: var(--dark-brown); /* Atau warna yang sesuai */
+}
+
+/* Gaya untuk teks "Loading more products" */
+.product-loading-more {
+    font-size: 16px;
+    font-style: italic;
+    color: var(--brown); /* Atau warna yang sesuai */
+    margin-top: 20px;
+}
+
+/*************************************************** END CSS untuk Card Product ***********************************************/
+
+
+/**********************************************CSS Untuk Card  Product Details**************************************************/
+
+.form-label {
+    font-weight: bold;
+    color: var(--dark-brown); /* Judul label formulir */
+}
+
+.btn-primary {
+    background-color: var(--brown); /* Tombol utama (Save) */
+    color: var(--warm-white);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+    .btn-primary:hover {
+        background-color: var(--dark-brown);
+    }
+
+.btn-secondary {
+    background-color: var(--light-brown); /* Tombol sekunder (Back) */
+    color: var(--dark-brown);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+    .btn-secondary:hover {
+        background-color: var(--brown);
+        color: var(--warm-white);
+    }
+
+.alert-danger {
+    background-color: var(--warm-white); /* Latar belakang pesan error */
+    color: var(--dark-brown);
+    border: 1px solid var(--brown);
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.25rem;
+}
+
+/* Gaya khusus untuk halaman ProductDetail */
+.product-detail-container {
+    padding: 20px;
+    background-color: var(--warm-white); /* Latar belakang halaman */
+}
+
+.product-image {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--brown); /* Border gambar */
+    border-radius: 0.25rem;
+}
+
+/* Atur lebar kolom untuk layout yang lebih baik */
+.col-md-4 {
+    margin-bottom: 1rem;
+}
+
+.col-md-8 {
+    margin-bottom: 1rem;
+}
+
+/**********************************************END CSS Untuk Card  Product Details**************************************************/
+
+
+/***********************************************CSS Untuk Dropdown category **************************************************/
+.category-dropdown {
+    position: relative; /* Untuk memposisikan dropdown */
+}
+
+.category-select-wrapper {
+    position: relative;
+}
+
+.category-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    z-index: 1000; /* Pastikan di atas elemen lain */
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+    .category-options li {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+        .category-options li:hover {
+            background-color: #f0f0f0;
+        }
+
+/****************************************************************************************************************************/
+
 /* Responsive adjustments jika diperlukan */
 @media (max-width: 600px) {
     .order-details-container {

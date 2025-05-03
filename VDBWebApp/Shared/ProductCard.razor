@@ -1,0 +1,47 @@
+﻿@using Blazored.LocalStorage
+
+
+@* Shared/ProductCard.razor *@
+<div class="product-card">
+    @if (!string.IsNullOrEmpty(Thumbnail))
+    {
+        <img src="@Thumbnail" alt="@ItemName" class="product-image" />
+    }
+    else
+    {
+        <img src="images/VDBDefault.jpg" alt="@ItemName" class="product-image" />
+    }
+    <p class="product-sku">SKU: @ItemCode</p>
+    <h4 class="product-title">@ItemName</h4>
+    <p class="product-price">Rp @Price</p>
+    <button class="btn btn-primary product-detail-button" @onclick="ShowProductDetail">Detail</button>
+</div>
+
+@code {
+    [Parameter]
+    public string ItemCode { get; set; }
+
+    [Parameter]
+    public string ItemName { get; set; }
+
+    [Parameter]
+    public string Thumbnail { get; set; }
+
+    [Parameter]
+    public string Price { get; set; }
+
+    [Parameter]
+    public string ItemId { get; set; } // Tambahkan ItemId parameter
+
+    [Inject]
+    public ILocalStorageService LocalStorage { get; set; }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    private async Task ShowProductDetail()
+    {
+        await LocalStorage.SetItemAsync("selectedProductId", ItemId.ToString());
+        NavigationManager.NavigateTo($"/productdetail/");
+    }
+}
