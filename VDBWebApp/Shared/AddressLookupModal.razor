@@ -1,0 +1,492 @@
+﻿@using System.Collections.Generic
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Models
+@using System.Text.Json
+
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject Services.CustomerServices CustomerService
+
+<div class="modal fade show" tabindex="-1" role="dialog" style="display:block;">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lookup Address</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseModal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="provinsiSearch" class="form-label">Provinsi</label>
+                    <input type="text" class="form-control" id="provinsiSearch"
+                           value="@selectedProvinsi"
+                           readonly
+                           @onclick="ShowProvinsiModal"
+                           placeholder="Klik untuk pilih provinsi" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="kotaKabupatenSearch" class="form-label">Kota/Kabupaten</label>
+                    <input type="text" class="form-control" id="kotaKabupatenSearch"
+                           value="@selectedCity"
+                           readonly
+                           @onclick="ShowCityModal"
+                           placeholder="Search Kota/Kabupaten" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="kecamatanSearch" class="form-label">Kecamatan</label>
+                    <input type="text" class="form-control" id="kecamatanSearch"
+                           value="@selectedDistrict"
+                           readonly
+                           @onclick="ShowDistrictModal"
+                           placeholder="Search Kecamatan" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="kelurahanSearch" class="form-label">Kelurahan</label>
+                    <input type="text" class="form-control" id="kelurahanSearch"
+                           value="@selectedVillage"
+                           readonly
+                           @onclick="ShowVillageModal"
+                           placeholder="Search Kelurahan" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="KodePos" class="form-label">Kode Pos</label>
+                    <input type="text" class="form-control" id="KodePos" @bind-value="selectedZipCode" readonly />
+                </div>
+
+                <div class="mb-3">
+                    <label for="AlamatLengkap" class="form-label">Alamat Lengkap</label>
+                    <InputTextArea id="AlamatLengkap" class="form-control" @bind-Value="alamatLengkap" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="SaveAddress">Save</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseModal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (showProvinsiModal)
+{
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pilih Provinsi</h5>
+                    <button type="button" class="btn-close" @onclick="CloseProvinsiModal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control mb-3"
+                           placeholder="Cari Provinsi..."
+                           @bind="provinsiSearchTerm"
+                           @bind:event="oninput" />
+
+                    <ul class="list-group">
+                        @foreach (var provinsi in FilteredProvinsi)
+                        {
+                            <li class="list-group-item list-group-item-action"
+                                @onclick="() => SelectProvinsiModal(provinsi)">
+                                @provinsi.ProvinceName
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@if (showCityModal)
+{
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pilih Provinsi</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCityModal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control mb-3"
+                           placeholder="Cari Provinsi..."
+                           @bind="kotaKabupatenSearchTerm"
+                           @bind:event="oninput" />
+
+                    <ul class="list-group">
+                        @foreach (var city in FilteredCity)
+                        {
+                            <li class="list-group-item list-group-item-action"
+                                @onclick="() => SelectCityModal(city)">
+                                @city.CityName
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@if (showDistrictModal)
+{
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pilih Provinsi</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDistrictModal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control mb-3"
+                           placeholder="Cari Provinsi..."
+                           @bind="kecamatanSearchTerm"
+                           @bind:event="oninput" />
+
+                    <ul class="list-group">
+                        @foreach (var district in FilteredDistrict)
+                        {
+                            <li class="list-group-item list-group-item-action"
+                                @onclick="() => SelectDistrictModal(district)">
+                                @district.DistrictName
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@if (showVillageModal)
+{
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pilih Provinsi</h5>
+                    <button type="button" class="btn-close" @onclick="CloseVillageModal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control mb-3"
+                           placeholder="Cari Provinsi..."
+                           @bind="kelurahanSearchTerm"
+                           @bind:event="oninput" />
+
+                    <ul class="list-group">
+                        @foreach (var village in FilteredVillage)
+                        {
+                            <li class="list-group-item list-group-item-action"
+                                @onclick="() => SelectVillageModal(village)">
+                                @village.VillageName
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+
+
+@code {
+    [Parameter]
+    public EventCallback<Address> OnAddressSelected { get; set; }
+
+    [Parameter]
+    public EventCallback OnModalClosed { get; set; }
+
+    [Parameter]
+    public string AddressCodeSeq { get; set; }
+
+    [Parameter]
+    public string AddressAlamat { get; set; }
+
+    private List<AddressProvince>? AddressProvinsi;
+    private List<AddressCity>? addressCity;
+    private List<AddressDistrict>? addressDistrict;
+    private List<AddressVillage>? addressVillage;
+
+    private string provinsiSearchTerm = "";
+    private string kotaKabupatenSearchTerm = "";
+    private string kecamatanSearchTerm = "";
+    private string kelurahanSearchTerm = "";
+
+    private bool showProvinsiOptions = false;
+    private bool showKotaKabupatenOptions = false;
+    private bool showKecamatanOptions = false;
+    private bool showKelurahanOptions = false;
+
+    private bool showProvinsiModal = false;
+    private bool showCityModal = false;
+    private bool showDistrictModal = false;
+    private bool showVillageModal = false;
+
+    private string selectedProvinsi = "";
+    private string selectedProvinsiCode = "";
+    private string selectedCity = "";
+    private string selectedCityCode = "";
+    private string selectedDistrict = "";
+    private string selectedDistrictCode = "";
+    private string selectedVillage = "";
+    private string selectedZipCode = "";
+    private string selectedAddressCode = "";
+
+    private string alamatLengkap = "";
+
+    private Address selectedAddress = new Address();
+    private AddressAll? selectedAddressAll = new AddressAll();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        Console.WriteLine(AddressCodeSeq);
+
+        if (!string.IsNullOrEmpty(AddressCodeSeq))
+        {
+            var addressAll = await CustomerService.GetAddressAll(AddressCodeSeq);
+            if (!string.IsNullOrEmpty(addressAll))
+            {
+                selectedAddressAll = JsonSerializer.Deserialize<List<AddressAll>>(addressAll, options)?.FirstOrDefault();
+                alamatLengkap = AddressAlamat;
+                selectedProvinsi = selectedAddressAll?.ProvinceName ?? "";
+                selectedCity = selectedAddressAll?.CityName ?? "";
+                selectedDistrict = selectedAddressAll?.DistrictName ?? "";
+                selectedVillage = selectedAddressAll?.VillageName ?? "";
+                selectedZipCode = selectedAddressAll?.ZipCode ?? "";
+            }
+
+        }
+        // Ganti ini dengan cara Anda mengambil data alamat (misalnya, dari service atau API)
+
+        var province = await CustomerService.GetProvince("");
+
+        if (!string.IsNullOrEmpty(province))
+        {
+            AddressProvinsi = JsonSerializer.Deserialize<List<AddressProvince>>(province, options) ?? new List<AddressProvince>();
+        }
+
+    }
+
+    private void ShowProvinsiModal()
+    {
+        showProvinsiModal = true;
+        provinsiSearchTerm = ""; // reset search setiap buka
+    }
+    private void ShowCityModal()
+    {
+        showCityModal = true;
+        kotaKabupatenSearchTerm = ""; // reset search setiap buka
+    }
+
+    private void ShowDistrictModal()
+    {
+        showDistrictModal = true;
+        kecamatanSearchTerm = ""; // reset search setiap buka
+    }
+
+    private void ShowVillageModal()
+    {
+        showVillageModal = true;
+        kelurahanSearchTerm = ""; // reset search setiap buka
+    }
+
+    private void CloseProvinsiModal()
+    {
+        showProvinsiModal = false;
+    }
+
+    private void CloseCityModal()
+    {
+        showCityModal = false;
+    }
+
+    private void CloseDistrictModal()
+    {
+        showDistrictModal = false;
+    }
+
+    private void CloseVillageModal()
+    {
+        showVillageModal = false;
+    }
+
+
+    async Task SelectProvinsiModal(AddressProvince provinsi)
+    {
+        selectedProvinsi = provinsi.ProvinceName ?? "";
+        selectedProvinsiCode = provinsi.ProvinceCode ?? "";
+        selectedCity = "";
+        selectedDistrict = "";
+        selectedVillage = "";
+
+        var city = await CustomerService.GetCity(selectedProvinsiCode, "");
+        if (!string.IsNullOrEmpty(city))
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            addressCity = JsonSerializer.Deserialize<List<AddressCity>>(city, options) ?? new List<AddressCity>();
+        }
+        showProvinsiModal = false;
+    }
+
+    async Task SelectCityModal(AddressCity city)
+    {
+        selectedCity = city.CityName ?? "";
+        selectedCityCode = city.CityCode ?? "";
+        selectedDistrict = "";
+        selectedVillage = "";
+
+        var district = await CustomerService.GetDistrict(selectedCityCode, "");
+        if (!string.IsNullOrEmpty(district))
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            addressDistrict = JsonSerializer.Deserialize<List<AddressDistrict>>(district, options) ?? new List<AddressDistrict>();
+        }
+        showCityModal = false;
+    }
+
+    async Task SelectDistrictModal(AddressDistrict district)
+    {
+        selectedDistrict = district.DistrictName ?? "";
+        selectedDistrictCode = district.DistrictCode ?? "";
+        selectedVillage = "";
+
+        var village = await CustomerService.GetVillage(selectedDistrictCode, "");
+        if (!string.IsNullOrEmpty(village))
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            addressVillage = JsonSerializer.Deserialize<List<AddressVillage>>(village, options) ?? new List<AddressVillage>();
+        }
+        showDistrictModal = false;
+    }
+
+    private void SelectVillageModal(AddressVillage village)
+    {
+        selectedVillage = village.VillageName?? "";
+        selectedZipCode = village.ZipCode ?? "";
+        selectedAddressCode = village.Seqno ?? "";
+        selectedAddress.AddressCode = selectedAddressCode;
+        showVillageModal = false;
+    }
+
+    private IEnumerable<AddressProvince> FilteredProvinsi => string.IsNullOrWhiteSpace(provinsiSearchTerm)
+    ? AddressProvinsi
+    : AddressProvinsi.Where(p => p.ProvinceName != null && p.ProvinceName.Contains(provinsiSearchTerm, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<AddressCity> FilteredCity => string.IsNullOrWhiteSpace(kotaKabupatenSearchTerm)
+    ? addressCity
+    : addressCity.Where(p => p.CityName != null && p.CityName.Contains(kotaKabupatenSearchTerm, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<AddressDistrict> FilteredDistrict => string.IsNullOrWhiteSpace(kecamatanSearchTerm)
+    ? addressDistrict
+    : addressDistrict.Where(p => p.DistrictName != null && p.DistrictName.Contains(kecamatanSearchTerm, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<AddressVillage> FilteredVillage => string.IsNullOrWhiteSpace(kelurahanSearchTerm)
+    ? addressVillage
+    : addressVillage.Where(p => p.VillageName != null && p.VillageName.Contains(kelurahanSearchTerm, StringComparison.OrdinalIgnoreCase));
+
+
+    private async Task SaveAddress()
+    {
+        if (selectedAddress != null)
+        {
+            selectedAddress.AlamatLengkap= alamatLengkap;
+
+            await OnAddressSelected.InvokeAsync(selectedAddress);
+        }
+        CloseModal();
+    }
+
+    private async Task CloseModal()
+    {
+        await OnModalClosed.InvokeAsync();
+    }
+
+  
+}
+
+<style>
+    .input-group {
+        display: flex;
+    }
+
+        .input-group .form-control {
+            flex: 1;
+            border-right: none;
+            border-radius: 0.25rem 0 0 0.25rem;
+        }
+
+        .input-group .btn-outline-secondary {
+            border-left: none;
+            border-radius: 0 0.25rem 0.25rem 0;
+        }
+
+    .modal-dialog {
+        max-width: 800px; /* Sesuaikan lebar modal */
+        margin: 1.75rem auto; /* Sesuaikan margin modal */
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+        background-color: var(--brown);
+        color: var(--warm-white);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 500;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 0 0 0.5rem 0.5rem;
+        padding: 0.75rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .address-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-top: none;
+        border-radius: 0 0 0.25rem 0.25rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+        .address-options li {
+            padding: 0.375rem 0.75rem;
+            cursor: pointer;
+        }
+
+            .address-options li:hover {
+                background-color: #f8f9fa;
+            }
+</style>

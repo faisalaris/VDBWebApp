@@ -1,0 +1,243 @@
+﻿@page "/customer/new"
+
+@using System.ComponentModel.DataAnnotations
+@using Models
+@using System.Text.Json
+
+@inject NavigationManager Navigation
+@inject Services.GensetServices GensetService
+@inject IJSRuntime JSRuntime
+@inject Services.CustomerServices CustomerService
+
+<h1>New Customer</h1>
+
+<div class="customer-new-container">
+    <EditForm Model="@customer" OnValidSubmit="@ShowSaveConfirmation">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="PersonName" class="form-label">Name</label>
+            <InputText id="PersonName" class="form-control" @bind-Value="customer.PersonName" />
+            <ValidationMessage For="@(() => customer.PersonName)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="Gender" class="form-label">Gender</label>
+            <InputSelect id="Gender" class="form-select" @bind-Value="customer.Gender">
+                <option value="">Select Gender</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => customer.Gender)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="Email" class="form-label">Email</label>
+            <InputText id="Email" class="form-control" @bind-Value="customer.Email" />
+            <ValidationMessage For="@(() => customer.Email)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="PhoneNo" class="form-label">Phone Number</label>
+            <InputText id="PhoneNo" class="form-control" @bind-Value="customer.PhoneNo" />
+            <ValidationMessage For="@(() => customer.PhoneNo)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="PersonCategory" class="form-label">Person Category</label>
+            <InputSelect id="PersonCategory" class="form-select" @bind-Value="customer.PersonCategory">
+                <option value="">Select Category</option>
+                <option value="WS">Whole Sale</option>
+                <option value="DSM">Drop Ship - Market Place</option>
+                <option value="DSD">Drop Ship - Direct</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => customer.PersonCategory)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="CustCategoryCode" class="form-label">Customer Category Code</label>
+            <select id="CustCategoryCode" class="form-select" @bind="customer.CustCategoryCode">
+                <option value="">Select Category</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.gcode">@category.gcode - @category.gname</option>
+                }
+            </select>
+            <ValidationMessage For="@(() => customer.CustCategoryCode)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="StoreName" class="form-label">Store Name</label>
+            <InputText id="StoreName" class="form-control" @bind-Value="customer.StoreName" />
+            <ValidationMessage For="@(() => customer.StoreName)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="CreditLimit" class="form-label">Credit Limit</label>
+            <InputNumber id="CreditLimit" class="form-control" @bind-Value="customer.CreditLimit" />
+            <ValidationMessage For="@(() => customer.CreditLimit)" />
+        </div>
+       
+        <div class="mb-3">
+            <input type="hidden" class="form-control" id="AddressCode" value="@customer.AddressCode" readonly @onclick="ShowAddressLookupModal" />
+            <ValidationMessage For="@(() => customer.AddressCode)" />
+        </div> 
+
+        <div class="mb-3">
+            <label for="StreetAddress" class="form-label">Street Address</label>
+            <InputText id="StreetAddress" class="form-control" @bind-Value="customer.StreetAddress"  readonly @onclick="ShowAddressLookupModal" />
+            <ValidationMessage For="@(() => customer.StreetAddress)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="StorePhoneNo" class="form-label">Store Phone Number</label>
+            <InputText id="StorePhoneNo" class="form-control" @bind-Value="customer.StorePhoneNo" />
+            <ValidationMessage For="@(() => customer.StorePhoneNo)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="UserName" class="form-label">Username</label>
+            <InputText id="UserName" class="form-control" @bind-Value="customer.UserName" />
+            <ValidationMessage For="@(() => customer.UserName)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="UserPwd" class="form-label">Password</label>
+            <InputText id="UserPwd" type="password" class="form-control" @bind-Value="customer.UserPwd" />
+            <ValidationMessage For="@(() => customer.UserPwd)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="ExpireDate" class="form-label">Expire Date</label>
+            <InputDate id="ExpireDate" class="form-control" @bind-Value="customer.startHighlightDate" />
+            <ValidationMessage For="@(() => customer.ExpireDate)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="PaymentNote" class="form-label">PaymentNote</label>
+            <select id="PaymentNote" class="form-select" @bind="customer.PaymentNote">
+                <option value="">Select Payment Note</option>
+                @foreach (var category in paymentcatagories)
+                {
+                    <option value="@category.gcode">@category.gcode - @category.gname</option>
+                }
+            </select>
+            <ValidationMessage For="@(() => customer.PaymentNote)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="ForeignCode" class="form-label">Foreign Code</label>
+            <InputText id="ForeignCode" class="form-control" @bind-Value="customer.ForeignCode" />
+            <ValidationMessage For="@(() => customer.ForeignCode)" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Customer</button>
+        <button type="button" class="btn btn-secondary" @onclick="GoBack">Back</button>
+    </EditForm>
+</div>
+
+@if (showAddressModal)
+{
+    <AddressLookupModal 
+        OnAddressSelected="HandleAddressSelected" 
+        OnModalClosed="CloseAddressLookupModal" 
+        AddressCodeSeq ="@customer.AddressCode"
+        AddressAlamat="@customer.StreetAddress"/>
+}
+
+<ActionModal @ref="SaveConfirmationModal" />
+<WarningModal @ref="warningModal" />
+
+@if (isLoading)
+{
+    <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
+}
+
+@code {
+    private Customer customer = new Customer();
+    private List<Category> categories = new List<Category>();
+    private List<Category> paymentcatagories = new List<Category>();
+    private bool showAddressModal = false;
+
+    private ActionModal? SaveConfirmationModal;
+    private WarningModal warningModal;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var custcategory = await GensetService.GetListCustomerCategory();
+        var paycategory = await GensetService.GetListPaymentCategory();
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            if (custcategory != null)
+            {
+                categories = JsonSerializer.Deserialize<List<Category>>(custcategory, options) ?? new List<Category>();
+            }
+
+            if (paycategory != null)
+            {
+                paymentcatagories = JsonSerializer.Deserialize<List<Category>>(paycategory, options) ?? new List<Category>();
+                // Lakukan sesuatu dengan paymentCategories jika diperlukan}
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching customer category: {ex.Message}");
+        }
+    }
+
+
+    private async Task SaveCustomer()
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+
+        var Data = await CustomerService.SaveCustomer(customer);
+        // Implementasikan logika penyimpanan customer di sini (misalnya, call API)
+        Console.WriteLine("Saving customer...");
+        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(customer)); // Log data yang akan disimpan
+
+        // Simulasikan penyimpanan
+        await Task.Delay(500);
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+
+    }
+
+    private void ShowSaveConfirmation()
+    {
+        SaveConfirmationModal?.Show("Apakah Anda yakin ingin Menyimpan?", "oi oi-warning", 2, EventCallback.Factory.Create(this, SaveCustomer), "Save", true, "Cancel");
+    }
+
+    private void SuccessConfirmation()
+    {
+        Navigation.NavigateTo("/customers");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/customers"); // Arahkan kembali ke halaman customer
+    }
+
+    private void ShowAddressLookupModal()
+    {
+        showAddressModal = true;
+    }
+
+    private void CloseAddressLookupModal()
+    {
+        showAddressModal = false;
+    }
+
+    private void HandleAddressSelected(Address selectedAddress)
+    {
+        customer.AddressCode = selectedAddress.AddressCode;
+        customer.StreetAddress = selectedAddress.AlamatLengkap;
+        showAddressModal = false;
+        StateHasChanged(); // Penting untuk memperbarui UI setelah memilih alamat
+    }
+}
+}

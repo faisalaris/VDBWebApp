@@ -23,3 +23,12 @@ window.observeElement = (elementClass, componentInstance) => {
     const target = document.querySelector(elementClass);
     observer.observe(target);
 };
+
+window.registerClickOutside = (elementId, dotnetHelper) => {
+    document.addEventListener('click', function (event) {
+        const target = document.getElementById(elementId);
+        if (target && !target.contains(event.target)) {
+            dotnetHelper.invokeMethodAsync('HideDropdown');
+        }
+    });
+};

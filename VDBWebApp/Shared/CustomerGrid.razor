@@ -1,0 +1,136 @@
+﻿@using System.Collections.Generic
+@using Models
+@using Blazored.LocalStorage
+
+<div class="table-container">
+    <div class="table-header-actions">
+    </div>
+    <table class="table table-striped table-bordered table-hover person-table">
+        <thead class="table-header">
+            <tr>
+                <th>Nama</th>
+                <th>Email</th>
+                <th>No. Telepon</th>
+                <th>Kategori</th>
+                <th>Payment Note</th>
+                <th>Kode Asing</th>
+                <th>Tindakan</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (People != null && People.Any())
+            {
+                @foreach (var person in People)
+                {
+                    <tr>
+                        <td>@person.PersonName</td>
+                        <td>@person.Email</td>
+                        <td>@person.PhoneNo</td>
+                        <td>@person.PersonCategory</td>
+                        <td>@person.PaymentNoteName</td>
+                        <td>@person.ForeignCode</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary edit-button" @onclick="() => EditCustomer(person.PersonId)" title="Edit">
+                                <img src="images/material/edit.png" alt="Edit" class="edit-icon" />
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center">Data tidak tersedia</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+
+    .table-container {
+        position: relative; /* Untuk memposisikan tombol tambah */
+    }
+
+    .table-header-actions {
+        position: absolute;
+        top: 300;
+        right: 0;
+        z-index: 200; /* Pastikan di atas tabel */
+    }
+
+    .add-button {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .add-icon {
+        width: 16px;
+        height: 16px;
+        vertical-align: middle;
+    }
+    table.person-table.table {
+        background-color: var(--brown) !important;
+        color: var(--light-brown) !important;
+    }
+
+        table.person-table.table th {
+            background-color: var(--brown) !important;
+            color: var(--warm-white) !important;
+        }
+
+        table.person-table.table td {
+            background-color: var(--warm-white) !important;
+            color: var(--dark-brown) !important;
+        }
+
+        table.person-table.table tbody tr:hover {
+            background-color: #e6d7c5 !important;
+            color: #000 !important;
+        }
+
+    .edit-button {
+        padding: 0.25rem 0.5rem; /* Lebih kecil padding tombol */
+        border: none;
+        background-color: var(--dark-brown); /* Transparan background */
+        cursor: pointer;
+    }
+
+        .edit-button:hover {
+            background-color: rgba(0, 0, 0, 0.1); /* Sedikit latar belakang saat dihover */
+        }
+
+    .edit-icon {
+        width: 16px; /* Ukuran ikon */
+        height: 16px;
+        vertical-align: middle; /* Pusatkan ikon vertikal */
+    }
+
+    /* Jika Anda ingin agar tombol selalu berada di tengah vertikal sel */
+    .person-table td {
+        vertical-align: middle;
+    }
+
+</style>
+@code {
+    [Parameter]
+    public List<Customer> People { get; set; } = new();
+
+    [Inject]
+    public ILocalStorageService LocalStorage { get; set; }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    private async Task EditCustomer(string personid)
+    {
+        await LocalStorage.SetItemAsync("customerid", personid);
+        NavigationManager.NavigateTo($"/CustomerEditDetail/");
+    }
+
+   
+}

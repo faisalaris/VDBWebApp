@@ -27,6 +27,7 @@ builder.Services.AddScoped<LoginServices>();
 builder.Services.AddScoped<DashboardServices>();
 builder.Services.AddScoped<ProductServices>();
 builder.Services.AddScoped<GensetServices>();
+builder.Services.AddScoped<CustomerServices>();
 
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();

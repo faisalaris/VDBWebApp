@@ -14,7 +14,15 @@
     <p class="product-sku">SKU: @ItemCode</p>
     <h4 class="product-title">@ItemName</h4>
     <p class="product-price">Rp @Price</p>
-    <button class="btn btn-primary product-detail-button" @onclick="ShowProductDetail">Detail</button>
+    @if (IsPrice)
+    {
+        <button class="btn btn-primary product-detail-button" @onclick="ShowProductPriceDetail">Detail Price</button>
+    }
+    else 
+    {
+        <button class="btn btn-primary product-detail-button" @onclick="ShowProductDetail">Detail</button>
+    }
+    
 </div>
 
 @code {
@@ -33,6 +41,10 @@
     [Parameter]
     public string ItemId { get; set; } // Tambahkan ItemId parameter
 
+    [Parameter]
+    public bool IsPrice { get; set; } // Tambahkan ItemId parameter
+
+
     [Inject]
     public ILocalStorageService LocalStorage { get; set; }
 
@@ -43,5 +55,11 @@
     {
         await LocalStorage.SetItemAsync("selectedProductId", ItemId.ToString());
         NavigationManager.NavigateTo($"/productdetail/");
+    }
+
+    private async Task ShowProductPriceDetail()
+    {
+        await LocalStorage.SetItemAsync("selectedProductId", ItemId.ToString());
+        NavigationManager.NavigateTo($"/productprice/");
     }
 }

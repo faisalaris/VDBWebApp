@@ -1,0 +1,131 @@
+﻿@page "/productsprice"
+
+@using System.ComponentModel.DataAnnotations
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using Models
+
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
+@inject Services.ProductServices ProductService
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<div class="container">
+    @* Search Bar *@
+    <h1 class="product-page-title">Product Price List</h1>
+    <input type="text"
+           placeholder="Search product..."
+           value="@search"
+           @oninput="HandleSearch"
+           maxlength="50"
+           class="product-search-input" />
+
+    @* Product Grid *@
+    <div class="product-grid">
+        @if (products != null && products.Any())
+        {
+            @foreach (var product in products)
+            {
+                <ProductCard ItemCode="@product.item_code"
+                             ItemName="@product.item_name"
+                             Thumbnail="@product.thumbnail"
+                             Price="@product.item_price"
+                             ItemId="@product.item_id" 
+                             IsPrice = "true" />
+            }
+        }
+        else if (loading)
+        {
+            <p class="loading-text">Loading products...</p>
+        }
+        else
+        {
+            <p class="no-product-text">No products found! 😞</p>
+        }
+    </div>
+
+    @* Loading Indicator *@
+    @if (loading)
+    {
+        <p class="loading-text">Loading more products...</p>
+    }
+</div>
+
+@code {
+    private List<Product> products = new List<Product>();
+    private string search = "";
+    private int page = 1;
+    private bool loading = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchProducts();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("observeElement", ".product-grid", DotNetObjectReference.Create(this));
+        }
+    }
+
+    private async Task FetchProducts()
+    {
+        loading = true;
+        errorMessage = null; // Reset error message
+
+        try
+        {
+            var listproducts = await ProductService.GetListProducts(page, search);
+
+
+            if (listproducts != null && listproducts.Any())
+            {
+                products = JsonSerializer.Deserialize<List<Product>>(listproducts, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Product>();
+            }
+            else
+            {
+                errorMessage = "No products found!";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged(); // Force re-render after loading
+        }
+    }
+
+    private async Task HandleSearch(ChangeEventArgs e)
+    {
+        string value = e.Value?.ToString() ?? "";
+        value = SanitizeInput(value);
+        search = value.Substring(0, Math.Min(value.Length, 50)); // Enforce length limit
+        page = 1; // Reset page on new search
+        await FetchProducts();
+    }
+
+    private string SanitizeInput(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        return System.Text.RegularExpressions.Regex.Replace(input, @"['"";-]", "").Replace("  ", " ").Trim();
+    }
+
+    [JSInvokable]
+    public async Task LoadMoreProducts()
+    {
+        if (!loading && !string.IsNullOrEmpty(errorMessage))
+        {
+            page++;
+            await FetchProducts();
+        }
+    }
+}

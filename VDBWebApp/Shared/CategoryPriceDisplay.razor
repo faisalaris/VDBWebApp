@@ -1,0 +1,15 @@
+﻿<div class="mb-3 category-price-item">
+    <label for="@CatCode" class="form-label">@CatName</label>
+    <InputText id="@CatCode" class="form-control" @bind-Value="ItemPrice" />
+</div>
+
+@code {
+    [Parameter]
+    public string CatCode { get; set; } = string.Empty;
+
+    [Parameter]
+    public string CatName { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ItemPrice { get; set; } = string.Empty;
+}

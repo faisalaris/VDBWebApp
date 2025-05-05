@@ -1,57 +1,124 @@
 ﻿@page "/fetchdata"
-@inject HttpClient Http
 
-<PageTitle>Weather forecast</PageTitle>
 
-<h1>Weather forecast</h1>
+@using System.ComponentModel.DataAnnotations
 
-<p>This component demonstrates fetching data from the server.</p>
+@inject IJSRuntime JS
 
-@if (forecasts == null)
+<EditForm Model="@formModel" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div id="dropdownWrapper" @ref="wrapperRef">
+        <input type="text" class="form-control"
+               @bind="searchTerm"
+               @oninput="FilterCategories"
+               @onclick="() => showDropdown = true"
+               placeholder="Cari kategori..." />
+
+        @if (showDropdown && filteredCategories.Any())
+        {
+            <ul class="list-group position-absolute z-3" style="width: 300px; max-height: 200px; overflow-y: auto;">
+                @foreach (var cat in filteredCategories)
+                {
+                    <li class="list-group-item list-group-item-action"
+                        @onclick="@(() => SelectCategory(cat))">
+                        @($"{cat.CatCode} - {cat.CatName}")
+                    </li>
+                }
+            </ul>
+        }
+
+        <ValidationMessage For="@(() => formModel.CategoryCode)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Simpan</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(message))
 {
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Temp. (C)</th>
-                <th>Temp. (F)</th>
-                <th>Summary</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var forecast in forecasts)
-            {
-                <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="alert alert-success mt-3">@message</div>
 }
 
 @code {
-    private WeatherForecast[]? forecasts;
-
-    protected override async Task OnInitializedAsync()
+    public class Category
     {
-        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("sample-data/weather.json");
+        public string CatCode { get; set; }
+        public string CatName { get; set; }
     }
 
-    public class WeatherForecast
+    public class ItemFormModel
     {
-        public DateOnly Date { get; set; }
+        [Required(ErrorMessage = "Kategori harus dipilih.")]
+        public string CategoryCode { get; set; }
+    }
 
-        public int TemperatureC { get; set; }
+    private ItemFormModel formModel = new();
+    private List<Category> categories = new()
+    {
+        new Category { CatCode = "EL", CatName = "Elektronik" },
+        new Category { CatCode = "PK", CatName = "Pakaian" },
+        new Category { CatCode = "MK", CatName = "Makanan" },
+        new Category { CatCode = "BK", CatName = "Buku" },
+        new Category { CatCode = "AT", CatName = "Alat Tulis" }
+    };
 
-        public string? Summary { get; set; }
+    private List<Category> filteredCategories = new();
+    private string searchTerm = string.Empty;
+    private bool showDropdown = false;
+    private string message;
 
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    protected override void OnInitialized()
+    {
+        // Set nilai default "BK"
+        formModel.CategoryCode = "BK";
+
+        var selected = categories.FirstOrDefault(c => c.CatCode == formModel.CategoryCode);
+        if (selected != null)
+        {
+            searchTerm = $"{selected.CatCode} - {selected.CatName}";
+        }
+    }
+
+    private void FilterCategories(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+        showDropdown = true;
+
+        filteredCategories = categories
+            .Where(c =>
+                c.CatCode.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                c.CatName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private void SelectCategory(Category category)
+    {
+        formModel.CategoryCode = category.CatCode;
+        searchTerm = $"{category.CatCode} - {category.CatName}";
+        filteredCategories.Clear();
+        showDropdown = false;
+    }
+
+    private void HandleValidSubmit()
+    {
+        message = $"Kategori yang dipilih: {formModel.CategoryCode}";
+    }
+    private ElementReference wrapperRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("registerClickOutside", "dropdownWrapper",
+                DotNetObjectReference.Create(this));
+        }
+    }
+
+    [JSInvokable]
+    public void HideDropdown()
+    {
+        showDropdown = false;
+        StateHasChanged();
     }
 }

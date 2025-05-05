@@ -1,18 +1,31 @@
 ﻿@page "/counter"
 
-<PageTitle>Counter</PageTitle>
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.ComponentModel.DataAnnotations
 
-<h1>Counter</h1>
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.ProductServices ProductService
 
-<p role="status">Current count: @currentCount</p>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<h3>ProductPriceDetail</h3>
 
 @code {
-    private int currentCount = 0;
 
-    private void IncrementCount()
+
+    protected override async Task OnInitializedAsync()
     {
-        currentCount++;
+        var itemId = await LocalStorage.GetItemAsync<string>("selectedProductId");
+        var Data = await ProductService.GetPriceProduct(itemId ?? "");
+
+        Console.WriteLine(Data);
+
     }
+
 }
+

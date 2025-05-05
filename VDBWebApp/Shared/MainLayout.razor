@@ -100,7 +100,7 @@
     private async Task Logout()
     {
         // Implementasi logika logout Anda di sini
-        await LocalStorage.RemoveItemAsync("user"); // Contoh: Hapus info user dari local storage
+        await LocalStorage.ClearAsync(); ; // Contoh: Hapus info user dari local storage
         loggedInUsername = null;
         isUserMenuOpen = false;
         GlobalVariables.ResetAll();

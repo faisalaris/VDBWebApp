@@ -2,27 +2,25 @@
 using System.Text;
 using VDBWebApp.Models;
 
-
-
 namespace VDBWebApp.Services
 {
-    public class ProductServices
+    public class CustomerServices
     {
         private readonly HttpClient _httpClient;
 
-        public ProductServices(HttpClient httpClient)
+        public CustomerServices(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
 
-        public async Task<string> GetListProducts(int page, string query)
+        public async Task<string> GetCustomers(string query)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec dbo.SPW_GetItem {page * 10},'%{query}%'",
+                    SP = $"exec SPA_GetCustomer '%{query}%'",
                     ParamSP = new { }
                 };
 
@@ -43,14 +41,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> GetProduct(string itemId)
+        public async Task<string> GetProvince(string query)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec dbo.SPA_GetProductEdit '{itemId}'",
+                    SP = $"exec SPA_GetAddressProvince '%{query}%'",
                     ParamSP = new { }
                 };
 
@@ -71,30 +69,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> SaveProductService(Product product)
+        public async Task<string> GetCity(string provinceCode ,string query)
         {
-            string pItemId = product.item_id;
-            string pItemCode = product.item_code;
-            string pItemName = product.item_name;
-            string pThumbnail = product.thumbnail;
-            string pItemPrice = product.item_price;
-            string pMsrp = product.msrp;
-            string pItemStock = product.item_stock;
-            string pIsActive = product.isactive;
-            string pBrandName = product.brand_name;
-            string pCategoryId = product.category_id;
-            string pRemark = product.remark;
-            string pStartHighlight = product.starthighlight;
-            string pEndHighlight = product.endhighlight;
-
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec dbo.SPA_SetProductEdit '{pItemId}','{pItemCode}','{pItemName}','{pCategoryId}'" +
-                         $",'{pBrandName}','{pItemStock}','{pThumbnail}','{pMsrp}','{pItemPrice}','{pRemark}'" +
-                         $",'{pIsActive}','{pStartHighlight}','{pEndHighlight}'",
+                    SP = $"exec SPA_GetAddressCity '{provinceCode}','%{query}%'",
                     ParamSP = new { }
                 };
 
@@ -115,14 +97,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> GetPriceProduct(string itemId)
+        public async Task<string> GetDistrict(string cityCode, string query)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec dbo.SPA_GetItemPriceList '{itemId}'",
+                    SP = $"exec SPA_GetAddressDistrict '{cityCode}','%{query}%'",
                     ParamSP = new { }
                 };
 
@@ -143,14 +125,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> SavePriceProduct(string itemId,string catCode,string catPrice)
+        public async Task<string> GetVillage(string districtCode, string query)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec dbo.SPA_SetItemPriceList '{itemId}','{catCode}','{catPrice}'",
+                    SP = $"exec SPA_GetAddressVillage '{districtCode}','%{query}%'",
                     ParamSP = new { }
                 };
 
@@ -171,50 +153,83 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> GetHighlightProduct(string userType,string userId)
+        public async Task<string> GetAddressAll(string addresscode)
         {
             try
             {
                 var url = "";
-
-                if (userType == "ADMIN")
+                var postData = new
                 {
-                    var postData = new
-                    {
-                        SP = $"exec dbo.SPA_GetListHighlightAdmin",
-                        ParamSP = new { }
-                    };
-                    var request = new HttpRequestMessage(HttpMethod.Post, url)
-                    {
-                        Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
-                    };
+                    SP = $"exec SPA_GetZIPAddress '{addresscode}'",
+                    ParamSP = new { }
+                };
 
-                    var response = await _httpClient.SendAsync(request);
-                    var jsonResponse = await response.Content.ReadAsStringAsync();
-                    return jsonResponse;
-                }
-                else
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
-                    var postData = new
-                    {
-                        SP = $"exec dbo.SPA_GetListHighlight '{userId}'",
-                        ParamSP = new { }
-                    };
-                    var request = new HttpRequestMessage(HttpMethod.Post, url)
-                    {
-                        Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
-                    };
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
 
-                    var response = await _httpClient.SendAsync(request);
-                    var jsonResponse = await response.Content.ReadAsStringAsync();
-                    return jsonResponse;
-                } 
+                // Menambahkan header
 
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
             }
             catch
             {
                 return null;
             }
+
+
+        }
+        public async Task<string> SaveCustomer(Customer customer)
+        {
+            string pPersonName = customer.PersonName;
+            string pGender = customer.Gender;
+            string pEmail = customer.Email;
+            string pPhoneNo = customer.PhoneNo;
+            string pPersonCategory = customer.PersonCategory;
+            string pCustCategoryCode = customer.CustCategoryCode;
+            string pStoreName = customer.StoreName;
+            string pCreditLimit = customer.CreditLimit.ToString();
+            string pAddressCode = customer.AddressCode;
+            string pStreetAddress = customer.StreetAddress;
+            string pStorePhoneNo = customer.StorePhoneNo;
+            string pUserName = customer.UserName;
+            string pUserPwd = customer.UserPwd;
+            string pPaymentNote = customer.PaymentNote;
+            string pPaymentNoteName = customer.PaymentNoteName;
+            string pForeignCode = customer.ForeignCode;
+            string pExpireDate = customer.ExpireDate;
+
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPA_SetNewCustomer '{pPersonName}','{pGender}','{pEmail}','{pPhoneNo}','{pPersonCategory}','{pCustCategoryCode}'," +
+                    $"'{pStoreName}','{pCreditLimit}','{pAddressCode}','{pStreetAddress}','{pStorePhoneNo}','{pUserName}','{pUserPwd}'," +
+                    $"'{pExpireDate}','{pPaymentNote}','{pForeignCode}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+
+
         }
     }
 }

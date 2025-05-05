@@ -1,9 +1,11 @@
 ﻿@page "/productdetail/"
+
 @using System.Text.Json
 @using Blazored.LocalStorage
 @using Radzen
 @using Radzen.Blazor
 @using Models
+@using System.Globalization;
 
 @inject NavigationManager Navigation
 @inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
@@ -86,11 +88,12 @@
                     </div>
                     <div class="mb-3">
                         <label for="starthighlight" class="form-label">Start Highlight</label>
-                        <InputText id="starthighlight" class="form-control" @bind-Value="product.starthighlight" />
+                        <InputDate id="starthighlight" class="form-control" @bind-Value="product.startHighlightDate" />
                     </div>
+
                     <div class="mb-3">
-                        <label for="endhighlight" class="form-label">End Highlight</label>
-                        <InputText id="endhighlight" class="form-control" @bind-Value="product.endhighlight" />
+                        <label for="starthighlight" class="form-label">Start Highlight</label>
+                        <InputDate id="starthighlight" class="form-control" @bind-Value="product.endHighlightDate" />
                     </div>
 
                     <button type="submit" class="btn btn-primary">Save</button>
@@ -110,6 +113,7 @@ else
 }
 
 <ActionModal @ref="SaveConfirmationModal" />
+<WarningModal @ref="warningModal" />
 
 @if (isLoading)
 {
@@ -126,6 +130,7 @@ else
     private string categorySearchTerm = "";
     private bool showCategories = false;
     private ActionModal? SaveConfirmationModal;
+    private WarningModal warningModal;
     private bool isLoading = false;
 
     int itemPrice = 0;
@@ -144,36 +149,35 @@ else
         var Data = await ProductService.GetProduct(itemId ?? "");
         var category = await GensetService.GetListCategory();
 
-
         try
         {
 
             if (!string.IsNullOrEmpty(Data))
             {
+                // Simulasikan pengambilan data dari API (ganti dengan logika Anda)
+                await Task.Delay(500);
 
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                product = JsonSerializer.Deserialize<List<Product>>(Data, options)?.FirstOrDefault();
+                product.item_id = itemId;
+
+                itemPrice = int.Parse(product.item_price);
+                msrp = int.Parse(product.msrp);
+                itemStock = int.Parse(product.item_stock);
+
+                //Console.WriteLine(product.item_id);
+                categories = categories = JsonSerializer.Deserialize<List<Category>>(category, options) ?? new List<Category>();
+                filteredCategories = categories;
             }
-            // Simulasikan pengambilan data dari API (ganti dengan logika Anda)
-            await Task.Delay(500);
-
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            product = JsonSerializer.Deserialize<List<Product>>(Data, options)?.FirstOrDefault();
-            product.item_id = itemId;
-
-            itemPrice = int.Parse(product.item_price);
-            msrp = int.Parse(product.msrp);
-            itemStock = int.Parse(product.item_stock);
-
-            //Console.WriteLine(product.item_id);
-            categories = categories = JsonSerializer.Deserialize<List<Category>>(category, options) ?? new List<Category>();
-            filteredCategories = categories;
-
             if (product == null)
             {
+                warningModal.Show("Product tidak di temukan", "bi bi-exclamation-triangle", 1);
                 errorMessage = "Product not found.";
             }
         }
         catch (Exception ex)
         {
+            warningModal.Show("Warning, Ada error di page ini", "bi bi-exclamation-triangle", 1);
             errorMessage = $"Error loading product details: {ex.Message}";
             Console.WriteLine(ex);
         }
@@ -181,24 +185,32 @@ else
 
     private async Task SaveProduct()
     {
-        isLoading = true;
-        await Task.Delay(1000);
+        if (product.startHighlightDate > product.endHighlightDate)
+        {
+            warningModal.Show("Tanggal mulai tidak boleh setelah tanggal akhir", "bi bi-exclamation-triangle", 1);
+            return;
+        }
+        else
+        { 
+            isLoading = true;
+            await Task.Delay(1000);
 
-        product.item_price = itemPrice.ToString();
-        product.msrp = msrp.ToString();
-        product.item_stock = itemStock.ToString();
+            product.item_price = itemPrice.ToString();
+            product.msrp = msrp.ToString();
+            product.item_stock = itemStock.ToString();
 
-        var Data = await ProductService.SaveProductService(product);
+            var Data = await ProductService.SaveProductService(product);
 
-        // Implementasikan logika penyimpanan produk di sini (misalnya, call API)
-        Console.WriteLine("Saving product...");
-        Console.WriteLine(JsonSerializer.Serialize(product)); // Log data yang akan disimpan
+            // Implementasikan logika penyimpanan produk di sini (misalnya, call API)
+            Console.WriteLine("Saving product...");
+            Console.WriteLine(JsonSerializer.Serialize(product)); // Log data yang akan disimpan
 
-        // Simulasikan penyimpanan
-        await Task.Delay(1000);
-        isLoading = false;
+            // Simulasikan penyimpanan
+            await Task.Delay(1000);
+            isLoading = false;
 
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok",false);
+            SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        }
     }
 
 
@@ -271,10 +283,4 @@ else
         Navigation.NavigateTo("/products"); // Arahkan kembali ke halaman produk
     }
 
-
-    public class Category
-    {
-        public string? gcode { get; set; }
-        public string? gname { get; set; }
-    }
 }

@@ -33,8 +33,9 @@
                 <ProductCard ItemCode="@product.item_code"
                              ItemName="@product.item_name"
                              Thumbnail="@product.thumbnail"
-                             Price="@product.price"
-                             ItemId="@product.item_id" // Tambahkan ItemId parameter di sini />
+                             Price="@product.item_price"
+                             ItemId="@product.item_id" 
+                             IsPrice="false" />
             }
         }
         else if (loading)
@@ -128,15 +129,5 @@
             page++;
             await FetchProducts();
         }
-    }
-
-    public class Product
-    {
-        public string item_id { get; set; }
-        public string item_code { get; set; }
-        public string item_name { get; set; }
-        public string thumbnail { get; set; }
-        public string msrp { get; set; }
-        public string price { get; set; }
     }
 }

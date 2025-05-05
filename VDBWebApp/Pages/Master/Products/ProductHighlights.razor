@@ -1,0 +1,178 @@
+﻿@page "/highlightproducts"
+
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.ComponentModel.DataAnnotations
+
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.ProductServices ProductService
+
+@if (usertype == "ADMIN")
+{
+    <div class="container">
+        <h1 class="product-page-title">Active List</h1>
+        @* Product Grid *@
+        <div class="product-grid">
+                @if (ActivehighlightProducts != null && ActivehighlightProducts.Any())
+                {
+                    @foreach (var product in ActivehighlightProducts)
+                    {
+                        <div class="product-card">
+                            @if (!string.IsNullOrEmpty(product.thumbnail))
+                            {
+                                <img src="@product.thumbnail" alt="@product.item_name" class="product-image" />
+                            }
+                            else
+                            {
+                                <img src="images/VDBDefault.jpg" alt="@product.item_name" class="product-image" />
+                            }
+                            <h4 class="product-title">@product.item_name</h4>
+                            <p class="product-price">@product.period</p>
+                        </div>
+                    }
+                }
+                else if (loading)
+                {
+                    <p class="loading-text">Loading products...</p>
+                }
+                else
+                {
+                    <p class="no-product-text">No products found! 😞</p>
+                }
+        </div>
+        @* Loading Indicator *@
+        @if (loading)
+        {
+            <p class="loading-text">Loading more products...</p>
+        }
+    </div>
+
+    <div class="container">
+        <h1 class="product-page-title">InActive List</h1>
+        @* Product Grid *@
+        <div class="product-grid">
+                @if (InActivehighlightProducts != null && InActivehighlightProducts.Any())
+                {
+                    @foreach (var product in InActivehighlightProducts)
+                    {
+                        <div class="product-card">
+                            @if (!string.IsNullOrEmpty(product.thumbnail))
+                            {
+                                <img src="@product.thumbnail" alt="@product.item_name" class="product-image" />
+                            }
+                            else
+                            {
+                                <img src="images/VDBDefault.jpg" alt="@product.item_name" class="product-image" />
+                            }
+                            <h4 class="product-title">@product.item_name</h4>
+                            <p class="product-price">@product.period</p>
+                        </div>
+                    }
+                }
+                else if (loading)
+                {
+                    <p class="loading-text">Loading products...</p>
+                }
+                else
+                {
+                    <p class="no-product-text">No products found! 😞</p>
+                }
+            </div>
+        @* Loading Indicator *@
+        @if (loading)
+        {
+            <p class="loading-text">Loading more products...</p>
+        }
+
+    </div>
+
+}
+else
+{
+    <div class="container">
+        <h1 class="product-page-title">highlight Product List</h1>
+        @* Product Grid *@
+        <div class="product-grid">
+            @if (highlightProducts != null && highlightProducts.Any())
+            {
+                @foreach (var product in highlightProducts)
+                {
+                    <div class="product-card">
+                        @if (!string.IsNullOrEmpty(product.thumbnail))
+                        {
+                            <img src="@product.thumbnail" alt="@product.item_name" class="product-image" />
+                        }
+                        else
+                        {
+                            <img src="images/VDBDefault.jpg" alt="@product.item_name" class="product-image" />
+                        }
+                        <h4 class="product-title">@product.item_name</h4>
+                        <p class="product-price">@product.period</p>
+                    </div>
+                }
+            }
+            else if (loading)
+            {
+                <p class="loading-text">Loading products...</p>
+            }
+            else
+            {
+                <p class="no-product-text">No products found! 😞</p>
+            }
+        </div>
+        @* Loading Indicator *@
+        @if (loading)
+        {
+            <p class="loading-text">Loading more products...</p>
+        }
+    </div>
+}
+@code {
+    private List<HighlightProduct> highlightProducts = new List<HighlightProduct>();
+    private List<HighlightProduct> ActivehighlightProducts = new List<HighlightProduct>();
+    private List<HighlightProduct> InActivehighlightProducts = new List<HighlightProduct>();
+
+    string? usertype;
+    private bool loading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userData = await LocalStorage.GetItemAsync<List<Dictionary<string, string>>>("user");
+        var userid = await LocalStorage.GetItemAsync<string>("userid");
+
+        usertype = userData[0]["usertype"];
+
+        var Data = await ProductService.GetHighlightProduct(usertype,userid);
+
+        if (!string.IsNullOrEmpty(Data))
+        {
+            await Task.Delay(500);
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            highlightProducts = JsonSerializer.Deserialize<List<HighlightProduct>>(Data, options) ?? new();
+
+            if (usertype == "ADMIN")
+            {
+                ActivehighlightProducts = highlightProducts.Where(x => x.isshow == "1").ToList();
+                InActivehighlightProducts = highlightProducts.Where(x => x.isshow == "0").ToList();
+            }       
+        }
+
+        Console.WriteLine(Data);
+
+    }
+
+    public class HighlightProduct
+    {
+        public string? item_id { get; set; } = string.Empty;
+        public string? item_name { get; set; } = string.Empty;
+        public string? period { get; set; } = string.Empty;
+        public string? thumbnail { get; set; } = string.Empty;
+        public string? isshow { get; set; } = string.Empty;
+    }
+}

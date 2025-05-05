@@ -1,4 +1,6 @@
-﻿namespace VDBWebApp.Models
+﻿using System.Text.Json.Serialization;
+
+namespace VDBWebApp.Models
 {
     public class Product
     {
@@ -16,5 +18,18 @@
         public string? remark { get; set; } = string.Empty;
         public string? starthighlight { get; set; } = string.Empty;
         public string? endhighlight { get; set; } = string.Empty;
+        [JsonIgnore]
+        public DateTime? startHighlightDate
+        {
+            get => DateTime.TryParse(starthighlight, out var result) ? result : null;
+            set => starthighlight = value?.ToString("yyyy-MM-dd");
+        }
+
+        [JsonIgnore]
+        public DateTime? endHighlightDate
+        {
+            get => DateTime.TryParse(endhighlight, out var result) ? result : null;
+            set => endhighlight = value?.ToString("yyyy-MM-dd");
+        }
     }
 }

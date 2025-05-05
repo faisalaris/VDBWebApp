@@ -84,13 +84,8 @@
                 else
                 {
                     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "user", login);
-                    GlobalVariables.userid = loginModel.Username;
-                    GlobalVariables.username = userData[0]["username"];
-                    GlobalVariables.usertype = userData[0]["usertype"];
-                    GlobalVariables.userlevel = userData[0]["userlevel"];
-                    GlobalVariables.personid = int.Parse(userData[0]["personid"]);
-                    GlobalVariables.category = userData[0]["category"];
-                    GlobalVariables.paymentnotename = userData[0]["paymentnotename"];
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "userid", loginModel.Username);
+                    Console.WriteLine(userData[0]["personid"]);
 
                     await Task.Delay(2000); // Tunda sebelum pindah halaman
                     Navigation.NavigateTo("/home", forceLoad: true);

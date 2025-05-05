@@ -4,6 +4,7 @@
 @using Blazored.LocalStorage
 @using System.Text.Json
 @using Models
+@using System.Collections.Generic;
 
 @inject NavigationManager Navigation
 @inject ILocalStorageService LocalStorage
@@ -15,23 +16,23 @@
 @if (dashboardDataList != null && dashboardDataList.Any())
 {
     <div class="dashboard-container">
-        <div class="dashboard-card @(activeStatus == "NEW" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "NEW"))">
+        <div class="dashboard-card @(activeStatus == "NEW" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(personid, "NEW"))">
             <h3>New</h3>
             <p class="count">@dashboardDataList.First().countnew</p>
         </div>
-        <div class="dashboard-card @(activeStatus == "CANCELED" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "CANCELED"))">
+        <div class="dashboard-card @(activeStatus == "CANCELED" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(personid, "CANCELED"))">
             <h3>Canceled</h3>
             <p class="count">@dashboardDataList.First().countcanceled</p>
         </div>
-        <div class="dashboard-card @(activeStatus == "PAYMENT" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "PAYMENT"))">
+        <div class="dashboard-card @(activeStatus == "PAYMENT" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(personid, "PAYMENT"))">
             <h3>Payment</h3>
             <p class="count">@dashboardDataList.First().countpayment</p>
         </div>
-        <div class="dashboard-card @(activeStatus == "PROCESS" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "PROCESS"))">
+        <div class="dashboard-card @(activeStatus == "PROCESS" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(personid, "PROCESS"))">
             <h3>Process</h3>
             <p class="count">@dashboardDataList.First().countprocess</p>
         </div>
-        <div class="dashboard-card @(activeStatus == "CLOSED" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(GlobalVariables.personid ?? 0, "CLOSED"))">
+        <div class="dashboard-card @(activeStatus == "CLOSED" ? "active" : "")" @onclick="@(() => HandleDashboardCardClick(personid, "CLOSED"))">
             <h3>Closed</h3>
             <p class="count">@dashboardDataList.First().countclosed</p>
         </div>
@@ -89,12 +90,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        usertype = GlobalVariables.usertype;
-        personid = usertype?.ToLower() == "admin" ? 0 : GlobalVariables.personid ?? 0;
+        var userData = await LocalStorage.GetItemAsync<List<Dictionary<string, string>>>("user");
+        var userid = await LocalStorage.GetItemAsync<string>("userid");
+
+        usertype = userData[0]["usertype"];
+        int person = int.Parse(userData[0]["personid"]);
+        personid = usertype?.ToLower() == "admin" ? 0 : person;
         status = "New";
 
         var Data = await DashboardService.GetDashboardHeaders(personid);
         var Detail = await DashboardService.GetDashboardHeaderDetails(personid, status);
+
+        Console.WriteLine(Detail);
         StateHasChanged();
         try
         {
@@ -105,7 +112,7 @@ else
                 // Otomatis klik (panggil LoadOrderDetails untuk "NEW") saat komponen diinisialisasi
                 if (dashboardDataList != null && dashboardDataList.Any())
                 {
-                    await LoadOrderDetails(GlobalVariables.personid ?? 0, "NEW");
+                    await LoadOrderDetails(personid, "NEW");
                     StateHasChanged();
                 }
             

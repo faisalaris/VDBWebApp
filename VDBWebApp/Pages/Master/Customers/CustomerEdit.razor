@@ -1,0 +1,168 @@
+﻿@page "/customer/edit"
+
+@inject NavigationManager Navigation
+
+<h3>Edit Customer</h3>
+
+<!-- BAGIAN ATAS: Form Edit Customer -->
+<EditForm Model="@customerModel" OnValidSubmit="SaveCustomer">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <div class="mb-4">
+        <label>Nama:</label>
+        <InputText @bind-Value="customerModel.Name" class="form-control" />
+        
+        <label>Email:</label>
+        <InputText @bind-Value="customerModel.Email" class="form-control" />
+
+        <label>Person Category:</label>
+        <InputText @bind-Value="customerModel.PersonCategory" class="form-control" />
+
+        <label>Customer Category:</label>
+        <InputText @bind-Value="customerModel.CustomerCategory" class="form-control" />
+
+        <label>Payment Note:</label>
+        <InputText @bind-Value="customerModel.PaymentNote" class="form-control" />
+
+        <label>Credit Limit:</label>
+        <InputNumber @bind-Value="customerModel.CreditLimit" class="form-control" />
+    </div>
+
+    <button class="btn btn-success" type="submit">Save Customer</button>
+</EditForm>
+
+<hr />
+
+<!-- BAGIAN TENGAH: Store Grid -->
+<h4>Stores</h4>
+<button class="btn btn-primary mb-2" @onclick="AddStore">Add Store</button>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Store Name</th>
+            <th>Phone</th>
+            <th>Street</th>
+            <th>Credit Limit</th>
+            <th>Is Active?</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var store in stores)
+        {
+            <tr>
+                <td>@store.StoreName</td>
+                <td>@store.StorePhone</td>
+                <td>@store.AddressStreet</td>
+                <td>@store.CreditLimit</td>
+                <td>@(store.IsActive ? "Yes" : "No")</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" @onclick="() => EditStore(store)">Edit</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<button class="btn btn-success" @onclick="SaveStores">Save Stores</button>
+
+<hr />
+
+<!-- BAGIAN BAWAH: User Grid -->
+<h4>Users</h4>
+<button class="btn btn-primary mb-2" @onclick="AddUser">Add User</button>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>User ID</th>
+            <th>Password</th>
+            <th>Start Date</th>
+            <th>Expires Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in users)
+        {
+            <tr>
+                <td>@user.UserId</td>
+                <td>@user.Password</td>
+                <td>@user.StartDate.ToShortDateString()</td>
+                <td>@user.ExpiresDate.ToShortDateString()</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" @onclick="() => EditUser(user)">Edit</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<button class="btn btn-success" @onclick="SaveUsers">Save Users</button>
+
+<hr />
+
+<!-- Tombol Back -->
+<button class="btn btn-secondary" @onclick="GoBack">Back</button>
+
+@code {
+    [Parameter] public string CustomerId { get; set; }
+
+    private CustomerModel customerModel = new();
+    private List<StoreModel> stores = new();
+    private List<UserModel> users = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load data customer, stores, and users by CustomerId
+    }
+
+    private void SaveCustomer() 
+    { /* Simpan data customer */ }
+
+    private void SaveStores() 
+    { /* Simpan data stores */ }
+
+    private void SaveUsers() 
+    { /* Simpan data users */ }
+
+    private void GoBack()
+    { /* Simpan data users */ }
+
+    private void AddStore() 
+    { /* Tambahkan store baru */ }
+
+    private void EditStore(StoreModel store) 
+    { /* Logika edit store */ }
+
+    private void AddUser() 
+    { /* Tambahkan user baru */ }
+
+    private void EditUser(UserModel user) 
+    { /* Logika edit user */ }
+
+    public class CustomerModel
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string PersonCategory { get; set; }
+        public string CustomerCategory { get; set; }
+        public string PaymentNote { get; set; }
+        public decimal CreditLimit { get; set; }
+    }
+
+    public class StoreModel
+    {
+        public string StoreName { get; set; }
+        public string StorePhone { get; set; }
+        public string AddressStreet { get; set; }
+        public decimal CreditLimit { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class UserModel
+    {
+        public string UserId { get; set; }
+        public string Password { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime ExpiresDate { get; set; }
+    }
+}

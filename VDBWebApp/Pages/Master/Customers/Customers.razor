@@ -1,0 +1,124 @@
+﻿@page "/customers"
+
+@using System.ComponentModel.DataAnnotations
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using Models
+
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
+@inject Services.CustomerServices CustomerService
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<div class="container">
+    @* Search Bar *@
+    <h1 class="product-page-title">Customers List</h1>
+    <input
+        type="text"
+        placeholder="Search Customer..."
+        value="@search"
+        @oninput="HandleSearch"
+        maxlength="50"
+        class="product-search-input" 
+     />
+    <div class="customer-actions">
+        <button class="btn btn-primary add-customer-button" @onclick="AddCustomer">
+            <img src="images/material/addmember.png" alt="Add Customer" class="add-icon" />
+            Add Customer
+        </button>
+    </div>
+
+<CustomerGrid people="@customers" />
+
+</div>
+@code {
+    private List<Customer> customers = new List<Customer>();
+    private string search = "";
+    private int page = 1;
+    private bool loading = false;
+    private string ? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchCustomers();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("observeElement", ".person-table", DotNetObjectReference.Create(this));
+        }
+    }
+
+    private async Task FetchCustomers()
+    {
+        loading = true;
+        errorMessage = null; // Reset error message
+
+        try
+        {
+            var listcustomers = await CustomerService.GetCustomers(search);
+
+            Console.WriteLine(listcustomers);
+
+            if (listcustomers != null && listcustomers.Any())
+            {
+                customers = JsonSerializer.Deserialize<List<Customer>>(listcustomers, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Customer>();
+                
+                foreach (var customer in customers)
+                {
+                    Console.WriteLine($"Customer ID: {customer.PersonId}, Name: {customer.PersonName}");
+                }
+            }
+            else
+            {
+                errorMessage = "No products found!";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged(); // Force re-render after loading
+        }
+    }
+
+    private async Task AddCustomer()
+    {
+        Navigation.NavigateTo($"/customer/new");
+    }
+
+    private async Task HandleSearch(ChangeEventArgs e)
+    {
+        string value = e.Value?.ToString() ?? "";
+        value = SanitizeInput(value);
+        search = value.Substring(0, Math.Min(value.Length, 50)); // Enforce length limit
+        page = 1; // Reset page on new search
+        await FetchCustomers();
+    }
+
+    private string SanitizeInput(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        return System.Text.RegularExpressions.Regex.Replace(input, @"['"";-]", "").Replace("  ", " ").Trim();
+    }
+
+    [JSInvokable]
+    public async Task LoadMoreCustomers()
+    {
+        if (!loading && !string.IsNullOrEmpty(errorMessage))
+        {
+            page++;
+            await FetchCustomers();
+        }
+    }
+
+
+}

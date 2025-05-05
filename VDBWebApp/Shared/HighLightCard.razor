@@ -1,0 +1,29 @@
+﻿
+@* Shared/HightlightCard.razor *@
+<div class="product-card">
+    @if (!string.IsNullOrEmpty(Thumbnail))
+    {
+        <img src="@Thumbnail" alt="@ItemName" class="product-image" />
+    }
+    else
+    {
+        <img src="images/VDBDefault.jpg" alt="@ItemName" class="product-image" />
+    }
+    <h4 class="product-title">@ItemName</h4>
+    <p class="product-price">@period</p>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public string ItemName { get; set; }
+
+    [Parameter]
+    public string Thumbnail { get; set; }
+
+    [Parameter]
+    public string period { get; set; }
+
+
+}
