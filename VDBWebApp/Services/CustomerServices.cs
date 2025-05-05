@@ -41,6 +41,99 @@ namespace VDBWebApp.Services
             }
         }
 
+        public async Task<string> GetCustomersdetail(string customerid)
+        {
+            try
+                {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPA_GetCustomerDetail '{customerid}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> GetCustomerStore(string customerid)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPA_GetCustomerStoreDetail '{customerid}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> SetCustomersdetail(CustomerSet customer)
+        {
+            string pPersonId = customer.PersonId;
+            string pPersonName = customer.PersonName;
+            string pPhoneNo = customer.PhoneNo;
+            string pPersonCategory = customer.PersonCategory;
+            string pCustCategoryCode = customer.CustCategoryCode;
+            string pPaymentNote = customer.PaymentNoteCode;
+            string?pForeignCode = customer.ForeignCode;
+            string pCreditLimit = customer.CreditLimit;
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_SetExistingCustomer '{pPersonId}','{pPersonName}','{pPhoneNo}','{pPersonCategory}','{pCustCategoryCode}'," +
+                    $"'{pPaymentNote}','{pForeignCode}','{pCreditLimit}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public async Task<string> GetProvince(string query)
         {
             try
@@ -191,7 +284,7 @@ namespace VDBWebApp.Services
             string pPersonCategory = customer.PersonCategory;
             string pCustCategoryCode = customer.CustCategoryCode;
             string pStoreName = customer.StoreName;
-            string pCreditLimit = customer.CreditLimit.ToString();
+            string pCreditLimit = customer.CreditLimit;
             string pAddressCode = customer.AddressCode;
             string pStreetAddress = customer.StreetAddress;
             string pStorePhoneNo = customer.StorePhoneNo;

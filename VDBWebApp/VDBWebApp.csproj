@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="Pages\Master\Customers\CustomerEdit.razor" />
     <Content Remove="Shared\HighlightCard.razor" />
   </ItemGroup>
 
@@ -24,17 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <_ContentIncludedByDefault Remove="Pages\Master\Customers\CustomerEdit.razor" />
     <_ContentIncludedByDefault Remove="Shared\HighlightCard.razor" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Pages\Master\Customers\CustomerEdit.razor" />
     <None Include="Shared\HighLightCard.razor" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <UpToDateCheckInput Remove="Pages\Master\Customers\CustomerEdit.razor" />
   </ItemGroup>
 
 </Project>

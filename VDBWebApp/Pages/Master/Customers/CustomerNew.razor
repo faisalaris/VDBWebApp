@@ -75,7 +75,7 @@
 
         <div class="mb-3">
             <label for="CreditLimit" class="form-label">Credit Limit</label>
-            <InputNumber id="CreditLimit" class="form-control" @bind-Value="customer.CreditLimit" />
+            <InputNumber id="CreditLimit" class="form-control" @bind-Value="credit" />
             <ValidationMessage For="@(() => customer.CreditLimit)" />
         </div>
        
@@ -164,6 +164,9 @@
     private WarningModal warningModal;
     private bool isLoading = false;
 
+
+    int credit = 0;
+
     protected override async Task OnInitializedAsync()
     {
         var custcategory = await GensetService.GetListCustomerCategory();
@@ -194,6 +197,7 @@
     {
         isLoading = true;
         await Task.Delay(1000);
+        customer.CreditLimit = credit.ToString();
 
         var Data = await CustomerService.SaveCustomer(customer);
         // Implementasikan logika penyimpanan customer di sini (misalnya, call API)

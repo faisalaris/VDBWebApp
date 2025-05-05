@@ -129,7 +129,7 @@
     private async Task EditCustomer(string personid)
     {
         await LocalStorage.SetItemAsync("customerid", personid);
-        NavigationManager.NavigateTo($"/CustomerEditDetail/");
+        NavigationManager.NavigateTo($"/customer/edit");
     }
 
    
