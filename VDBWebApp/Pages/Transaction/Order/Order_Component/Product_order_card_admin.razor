@@ -1,0 +1,67 @@
+﻿@using Blazored.LocalStorage
+@using Models
+
+
+@* Shared/ProductCard.razor *@
+<div class="cart-item">
+    <img src="@orderCustomer.Thumbnail" alt="@orderCustomer.Item_Name" class="cart-thumbnail" />
+
+    <div class="cart-details">
+        <h5 class="cart-title">@orderCustomer.Item_Name</h5>
+        <p class="cart-price">Rp @orderCustomer.Price</p>
+        <p class="cart-stock">Stock: @orderCustomer.Stock</p>
+    </div>
+
+    <div class="cart-actions">
+        <img src="images/material/delete.png" class="delete-icon" @onclick="RemoveItemFromCart" title="Remove" />
+
+        <div class="qty-controls">
+            <button class="qty-btn" @onclick="DecreaseQty">−</button>
+            <span class="qty-text">@orderCustomer.Qty</span>
+            <button class="qty-btn" @onclick="IncreaseQty">+</button>
+        </div>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public OrderListCustomers orderCustomer { get; set; }
+
+    [Parameter]
+    public EventCallback<OrderListCustomers> OnRemoveCartSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<OrderListCustomers> OnIncreaseQtyItem { get; set; }
+
+    [Parameter]
+    public EventCallback<OrderListCustomers> OnDecreaseQtyItem { get; set; }
+
+
+
+    private async Task RemoveItemFromCart()
+    {
+        await OnRemoveCartSelected.InvokeAsync(orderCustomer);
+    }
+
+    private async Task IncreaseQty()
+    {
+        if (int.TryParse(orderCustomer.Qty, out int qty))
+        {
+            qty++;
+            orderCustomer.Qty = qty.ToString();
+        }
+
+        await OnIncreaseQtyItem.InvokeAsync(orderCustomer);
+    }
+
+    private async Task DecreaseQty()
+    {
+        if (int.TryParse(orderCustomer.Qty, out int qty) && qty > 1)
+        {
+            qty--;
+            orderCustomer.Qty = qty.ToString();
+        }
+
+        await OnDecreaseQtyItem.InvokeAsync(orderCustomer);
+    }
+}
+

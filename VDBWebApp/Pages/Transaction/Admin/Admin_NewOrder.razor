@@ -1,0 +1,73 @@
+﻿@page "/admin_neworder"
+
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.Globalization;
+
+
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.OrderServices OrderService
+@inject NavigationManager Navigation
+
+<div class="container">
+    <h3>Choose Customer</h3>
+    
+    <div class="product-grid">
+        @if (orderCustomers != null && orderCustomers.Any())
+        {
+            @foreach (var item in orderCustomers)
+            {
+                <div class="product-card">
+                    <h4 class="product-title">@item.PersonName</h4>
+                    <p class="product-sku">@item.PersonCategory</p>
+                    <p class="product-sku">@item.PaymentNote</p>
+                    <button class="btn btn-primary product-detail-button" @onclick="() => GotoOrder(item.PersonId)">Choose</button>
+                </div>
+            }
+        }
+        else if (loading)
+        {
+            <p class="loading-text">Loading data...</p>
+        }
+        else
+        {
+            <p class="no-product-text">No data found! 😞</p>
+        }
+    </div>
+</div>
+
+@code {
+
+        private List<Genset> Gensets = new List<Genset>();
+        private List <OrderCustomer> orderCustomers = new List<OrderCustomer>();
+        private bool showModal = false;
+    private bool loading = false;
+
+        private bool showAddModal = false;
+        private Genset selectedGenset = new();
+        private string gtypepar = "01";
+
+        protected override async Task OnInitializedAsync()
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var data = await OrderService.GetListCustToOrder();
+
+            if (!string.IsNullOrEmpty(data))
+            {
+                orderCustomers = JsonSerializer.Deserialize<List<OrderCustomer>>(data, options) ?? new List<OrderCustomer>();
+                Console.WriteLine(data);
+            }
+        }
+
+        private async Task GotoOrder(string id)
+        {
+            await LocalStorage.SetItemAsync("selectedOrderCustomerId", id.ToString());
+            Navigation.NavigateTo($"/neworderdetail/");
+        }
+
+
+}

@@ -1,31 +1,22 @@
 ﻿@page "/counter"
 
-@using System.Text.Json
-@using Blazored.LocalStorage
-@using Radzen
-@using Radzen.Blazor
-@using Models
-@using System.ComponentModel.DataAnnotations
 
-@inject NavigationManager Navigation
-@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
-@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
-@inject Services.ProductServices ProductService
-
-
-<h3>ProductPriceDetail</h3>
+<MudTabs>
+    <MudTab Label="Tab 1">
+        <MudText Typo="Typo.h6">Konten untuk Tab 1</MudText>
+        <p>Ini adalah konten pertama dalam tab pertama.</p>
+    </MudTab>
+    <MudTab Label="Tab 2">
+        <MudText Typo="Typo.h6">Konten untuk Tab 2</MudText>
+        <p>Ini adalah konten kedua dalam tab kedua.</p>
+    </MudTab>
+    <MudTab Label="Tab 3">
+        <MudText Typo="Typo.h6">Konten untuk Tab 3</MudText>
+        <p>Ini adalah konten ketiga dalam tab ketiga.</p>
+    </MudTab>
+</MudTabs>
 
 @code {
-
-
-    protected override async Task OnInitializedAsync()
-    {
-        var itemId = await LocalStorage.GetItemAsync<string>("selectedProductId");
-        var Data = await ProductService.GetPriceProduct(itemId ?? "");
-
-        Console.WriteLine(Data);
-
-    }
-
+    private bool _drawerOpen = true;
 }
 

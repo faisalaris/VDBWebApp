@@ -1,0 +1,144 @@
+﻿@page "/banners"
+
+
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.Globalization;
+
+
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.CustomerServices CustomerService
+@inject Services.GensetServices GensetService
+@inject NavigationManager Navigation
+
+
+<div class="container">
+    <h3>Banner</h3>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-primary mb-2" @onclick="TriggerFileInput">Add Genset</button>
+        <input type="file" style="display: none;" @ref="fileInputRef" @onchange="(e => ReadFile())" />
+    </div>
+
+    <div class="product-grid">
+        @if (Gensets != null && Gensets.Any())
+        {
+            @foreach (var item in Gensets)
+            {
+                <BannerCard genset="@item"
+                            OnDetailClicked="HandleShowGensetDetail" />
+            }
+        }
+        else if (loading)
+        {
+            <p class="loading-text">Loading data...</p>
+        }
+        else
+        {
+            <p class="no-product-text">No data found! 😞</p>
+        }
+    </div>
+</div>
+
+<ActionModal @ref="SaveConfirmationModal" />
+<WarningModal @ref="warningModal" />
+
+@if (isLoading)
+{
+    <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
+}
+
+@code {
+    private ElementReference fileInputRef;
+    private List<GensetBanner> Gensets = new List<GensetBanner>();
+    private GensetBanner selectedGenset = new();
+    private GensetBanner newGenset = new();
+    string userid = "";
+    private bool loading = false;
+    private ActionModal? SaveConfirmationModal;
+    private WarningModal warningModal;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userid = await LocalStorage.GetItemAsync<string>("userid");
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var data = await GensetService.GetBanner(userid);
+
+
+
+        if (!string.IsNullOrEmpty(data))
+        {
+            Gensets = JsonSerializer.Deserialize<List<GensetBanner>>(data, options);                
+        }
+    }
+
+    private async Task TriggerFileInput()
+    {
+        await JSRuntime.InvokeVoidAsync("triggerClick", fileInputRef);
+        isLoading = true;
+        await Task.Delay(1000);
+
+        newGenset.BannerImage = ByteArrayToHex(newGenset.GimageByte);
+
+        var data = await GensetService.SetBanner(newGenset.BannerImage);
+
+        await Task.Delay(500);
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+
+    }
+
+    private void SuccessConfirmation()
+    {
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+
+
+    private void HandleShowGensetDetail(GensetBanner genset)
+    {
+        selectedGenset = genset;
+    }
+
+    private async Task ReadFile()
+    {
+        await JSRuntime.InvokeVoidAsync("readFileAsHexAndBase64", fileInputRef, DotNetObjectReference.Create(this));
+    }
+
+    [JSInvokable]
+    public void ReceiveHexFromJs(string hex)
+    {
+        newGenset.GimageByte = ConvertHexToBytes(hex);
+
+    }
+
+    [JSInvokable]
+    public void ReceiveHexAndBase64FromJs(string hex, string base64)
+    {
+        newGenset.BannerImage = base64;
+        StateHasChanged();
+    }
+
+    public static string ByteArrayToHex(byte[] bytes)
+    {
+        if (bytes == null || bytes.Length == 0) return "0x";
+        return "0x" + BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
+    }
+
+    public static byte[] ConvertHexToBytes(string hex)
+    {
+        if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            hex = hex.Substring(2);
+
+        int length = hex.Length;
+        byte[] bytes = new byte[length / 2];
+        for (int i = 0; i < length; i += 2)
+        {
+            bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+        }
+        return bytes;
+    }
+}

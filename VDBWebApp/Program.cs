@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using VDBWebApp;
 using VDBWebApp.Services;
 using Radzen;
+using MudBlazor.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -28,10 +29,13 @@ builder.Services.AddScoped<DashboardServices>();
 builder.Services.AddScoped<ProductServices>();
 builder.Services.AddScoped<GensetServices>();
 builder.Services.AddScoped<CustomerServices>();
+builder.Services.AddScoped<OrderServices>();
 
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
+
+builder.Services.AddMudServices();
 
 await builder.Build().RunAsync();

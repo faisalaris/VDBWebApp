@@ -1,0 +1,72 @@
+﻿@using Blazored.LocalStorage
+@using Models
+
+
+@* Shared/ProductCard.razor *@
+<div class="product-card">
+    @*@<img src="images/VDBDefault.jpg" alt="@genset.Gname" class="product-image" />*@
+    @if (!string.IsNullOrEmpty(genset.BannerImage))
+    {
+        @*@<img src="@genset.Base64ImageSrc" alt="banner" class="pbroduct-image" />*@
+        <img src="data:@GetImageMimeType(genset.BannerImage);base64,@genset.BannerImage" alt="Banner" class="img-fluid" />
+    }
+    @*else if (!string.IsNullOrEmpty(genset.Gimage))
+    {
+    <img src="@ConvertHexToBase64(genset.Gimage, "image/png"))" alt="@genset.Gname" class="product-image" />
+
+    Console.WriteLine(ConvertHexToBase64(genset.Gimage, "image/png"));}*@
+
+    else
+    {
+        <img src="images/VDBDefault.jpg" alt="VBD" class="product-image" />
+    }   
+
+    <button class="btn btn-primary product-detail-button mt-5" @onclick="ShowGensetDetail">Edit</button>
+</div>
+
+@code {
+    [Parameter]
+    public GensetBanner genset { get; set; }
+
+    [Parameter]
+    public EventCallback<GensetBanner> OnDetailClicked { get; set; }
+
+    [Inject]
+    public ILocalStorageService LocalStorage { get; set; }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    public static string CleanHex(string hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex))
+            return string.Empty;
+
+        if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            hex = hex[2..];
+
+        // Hilangkan karakter non-hex
+        hex = new string(hex.Where(c => "0123456789abcdefABCDEF".Contains(c)).ToArray());
+
+        // Jika panjang ganjil, tambahkan 0 di depan agar genap
+        if (hex.Length % 2 != 0)
+            hex = "0" + hex;
+
+        return hex;
+    }
+    private async Task ShowGensetDetail()
+    {
+        await OnDetailClicked.InvokeAsync(genset);
+
+    }
+
+    private string GetImageMimeType(string base64)
+    {
+        if (base64.StartsWith("/9j/")) return "image/jpeg"; // JPEG
+        if (base64.StartsWith("iVBOR")) return "image/png"; // PNG
+        return "image/jpeg"; // default fallback
+    }
+
+  
+
+}

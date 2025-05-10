@@ -97,6 +97,34 @@ namespace VDBWebApp.Services
             }
         }
 
+        public async Task<string> GetCustomerUser(string customerid)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPA_GetCustomerUser '{customerid}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public async Task<string> SetCustomersdetail(CustomerSet customer)
         {
             string pPersonId = customer.PersonId;
@@ -114,6 +142,172 @@ namespace VDBWebApp.Services
                 {
                     SP = $"exec SPW_SetExistingCustomer '{pPersonId}','{pPersonName}','{pPhoneNo}','{pPersonCategory}','{pCustCategoryCode}'," +
                     $"'{pPaymentNote}','{pForeignCode}','{pCreditLimit}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        public async Task<string> SetEditCustomersStore(CustomerStore customerstore,string userid)
+        {
+            string pPersonId = userid;
+            string pStoreId = customerstore.StoreId;
+            string pPersonName = customerstore.StoreName;
+            string pPhoneNo = customerstore.PhoneNo;
+            string pAddressCode = customerstore.AddressCode;
+            string pStreetAddress = customerstore.StreetAddress;
+            string pIsActive = customerstore.IsActive;
+            string pCreditLimit = customerstore.CreditLimit;
+            
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_SetEditStore '{pPersonId}','{pStoreId}','{pPersonName}','{pPhoneNo}','{pCreditLimit}'," +
+                    $"'{pAddressCode}','{pStreetAddress}','{pIsActive}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+
+        }
+        public async Task<string> SetAddCustomersStore(CustomerStore customerstore, string userid)
+        {
+            string pPersonId = userid;
+            string pStoreName = customerstore.StoreName;
+            string pPhoneNo = customerstore.PhoneNo;
+            string pAddressCode = customerstore.AddressCode;
+            string pStreetAddress = customerstore.StreetAddress;
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_SetAddStore '{pPersonId}','{pStoreName}','{pAddressCode}','{pStreetAddress}','{pPhoneNo}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        public async Task<string> SetDefaultCustomerStore(string storeid, string userid)
+        {
+            string pPersonId = userid;
+            string pStoreId = storeid;
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_SetUserProfileStoreDefault '{pPersonId}','{storeid}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        
+            public async Task<string> SetEditCustomersUser(CustomerUser customersuser)
+        {
+            string pUserId = customersuser.UserId;
+            string pUsrPwd = customersuser.UserPassword;
+            string pStartDate = customersuser.StartDate;
+            string pExpiredDate = customersuser.UserExpireDate;
+
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPA_SetUpdateUser '{pUserId}','{pUsrPwd}','{pStartDate}','{pExpiredDate}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+
+        }
+        public async Task<string> SetAddCustomersUser(CustomerUser customeruser,string customerid)
+        {
+            string pUserId = customerid;
+            string pUserName = customeruser.UserId;
+            string pUsrPwd = customeruser.UserPassword;
+            string pStartDate = customeruser.StartDate;
+            string pExpiredDate = customeruser.UserExpireDate;
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPA_SetNewUser '{pUserId}','{pUserName}','{pUsrPwd}','{pExpiredDate}'",
                     ParamSP = new { }
                 };
 

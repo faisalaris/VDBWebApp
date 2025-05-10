@@ -1,0 +1,46 @@
+﻿@using Blazored.LocalStorage
+@using Models
+
+@* Shared/ProductCard.razor *@
+<div class="product-card">
+    @if (!string.IsNullOrEmpty(product.thumbnail))
+    {
+        <img src="@product.thumbnail" alt="@product.item_name" class="product-image" />
+    }
+    else
+    {
+        <img src="images/VDBDefault.jpg" alt="@product.item_name" class="product-image" />
+    }
+    <p class="product-sku">SKU: @product.item_code</p>
+    <h4 class="product-title">@product.item_name</h4>
+    <p class="product-price">Rp @product.item_price</p>
+
+    <div style="display: flex; justify-content: center;">
+        <img src="images/material/cart.png"
+             alt="Checkout"
+             style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+             @onclick="CheckOutAction" />
+    </div>
+
+
+</div>
+
+@code {
+    [Parameter]
+    public Product product { get; set; }
+
+    [Parameter]
+    public EventCallback<Product> OnCartClicked { get; set; }
+    [Inject]
+    public ILocalStorageService LocalStorage { get; set; }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    private async Task CheckOutAction()
+    {
+        await OnCartClicked.InvokeAsync(product);
+    }
+
+
+}

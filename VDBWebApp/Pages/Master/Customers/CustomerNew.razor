@@ -9,22 +9,23 @@
 @inject IJSRuntime JSRuntime
 @inject Services.CustomerServices CustomerService
 
-<h1>New Customer</h1>
+
 
 <div class="customer-new-container">
+    <h1>New Customer</h1>
     <EditForm Model="@customer" OnValidSubmit="@ShowSaveConfirmation">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
         <div class="mb-3">
-            <label for="PersonName" class="form-label">Name</label>
-            <InputText id="PersonName" class="form-control" @bind-Value="customer.PersonName" />
+            <label for="PersonName" class="form-label">Customer Name</label>
+            <InputText id="PersonName" class="form-control" @bind-Value="customer.PersonName" placeholder="Customer Name"  />
             <ValidationMessage For="@(() => customer.PersonName)" />
         </div>
 
         <div class="mb-3">
             <label for="Gender" class="form-label">Gender</label>
-            <InputSelect id="Gender" class="form-select" @bind-Value="customer.Gender">
+            <InputSelect id="Gender" class="form-select" @bind-Value="customer.Gender" >
                 <option value="">Select Gender</option>
                 <option value="M">Male</option>
                 <option value="F">Female</option>
@@ -33,19 +34,19 @@
         </div>
 
         <div class="mb-3">
-            <label for="Email" class="form-label">Email</label>
-            <InputText id="Email" class="form-control" @bind-Value="customer.Email" />
+            <label for="Email" class="form-label">Customer Email</label>
+            <InputText id="Email" class="form-control" @bind-Value="customer.Email" placeholder="Customer Email"  />
             <ValidationMessage For="@(() => customer.Email)" />
         </div>
 
         <div class="mb-3">
-            <label for="PhoneNo" class="form-label">Phone Number</label>
-            <InputText id="PhoneNo" class="form-control" @bind-Value="customer.PhoneNo" />
+            <label for="PhoneNo" class="form-label">Phone No</label>
+            <InputText id="PhoneNo" class="form-control" @bind-Value="customer.PhoneNo" placeholder="Customer Phone Number" />
             <ValidationMessage For="@(() => customer.PhoneNo)" />
         </div>
 
         <div class="mb-3">
-            <label for="PersonCategory" class="form-label">Person Category</label>
+            <label for="PersonCategory" class="form-label">Category</label>
             <InputSelect id="PersonCategory" class="form-select" @bind-Value="customer.PersonCategory">
                 <option value="">Select Category</option>
                 <option value="WS">Whole Sale</option>
@@ -56,9 +57,9 @@
         </div>
 
         <div class="mb-3">
-            <label for="CustCategoryCode" class="form-label">Customer Category Code</label>
+            <label for="CustCategoryCode" class="form-label">Customer Level</label>
             <select id="CustCategoryCode" class="form-select" @bind="customer.CustCategoryCode">
-                <option value="">Select Category</option>
+                <option value="">Choose Level</option>
                 @foreach (var category in categories)
                 {
                     <option value="@category.gcode">@category.gcode - @category.gname</option>
@@ -67,18 +68,39 @@
             <ValidationMessage For="@(() => customer.CustCategoryCode)" />
         </div>
 
+        @if (customer.PersonCategory == "WS")
+        {
         <div class="mb-3">
-            <label for="StoreName" class="form-label">Store Name</label>
-            <InputText id="StoreName" class="form-control" @bind-Value="customer.StoreName" />
+            <label for="StoreName" class="form-label">Address Title</label>
+            <InputText id="StoreName" class="form-control" @bind-Value="customer.StoreName" placeholder="Address Title to make more simple" />
             <ValidationMessage For="@(() => customer.StoreName)" />
         </div>
-
+        }
+        else { 
         <div class="mb-3">
-            <label for="CreditLimit" class="form-label">Credit Limit</label>
-            <InputNumber id="CreditLimit" class="form-control" @bind-Value="credit" />
-            <ValidationMessage For="@(() => customer.CreditLimit)" />
+            <label for="StoreName" class="form-label">Store name</label>
+            <InputText id="StoreName" class="form-control" @bind-Value="customer.StoreName" placeholder="Store name for Drop Shipper" />
+            <ValidationMessage For="@(() => customer.StoreName)" />
         </div>
-       
+        }
+
+        @if (customer.PersonCategory == "WS")
+            {
+            <div class="mb-3">
+                <label for="CreditLimit" class="form-label">Credit Limit</label>
+                <InputNumber id="CreditLimit" class="form-control" @bind-Value="credit"  placeholder="Whole sale limit credit"  />
+                <ValidationMessage For="@(() => customer.CreditLimit)" />
+            </div>
+        }
+        else 
+        { 
+            <div class="mb-3">
+                <label for="CreditLimit" class="form-label">Credit Limit</label>
+                <InputNumber id="CreditLimit" class="form-control" @bind-Value="credit"  placeholder="Store limit kredit"  />
+                <ValidationMessage For="@(() => customer.CreditLimit)" />
+            </div>
+        }
+
         <div class="mb-3">
             <input type="hidden" class="form-control" id="AddressCode" value="@customer.AddressCode" readonly @onclick="ShowAddressLookupModal" />
             <ValidationMessage For="@(() => customer.AddressCode)" />
@@ -86,13 +108,14 @@
 
         <div class="mb-3">
             <label for="StreetAddress" class="form-label">Street Address</label>
-            <InputText id="StreetAddress" class="form-control" @bind-Value="customer.StreetAddress"  readonly @onclick="ShowAddressLookupModal" />
+            <InputText id="StreetAddress" class="form-control" @bind-Value="customer.StreetAddress" 
+                       readonly @onclick="ShowAddressLookupModal" placeholder="Choose and fill address"  />
             <ValidationMessage For="@(() => customer.StreetAddress)" />
         </div>
 
         <div class="mb-3">
             <label for="StorePhoneNo" class="form-label">Store Phone Number</label>
-            <InputText id="StorePhoneNo" class="form-control" @bind-Value="customer.StorePhoneNo" />
+            <InputText id="StorePhoneNo" class="form-control" @bind-Value="customer.StorePhoneNo" placeholder="Store Phone No"  />
             <ValidationMessage For="@(() => customer.StorePhoneNo)" />
         </div>
 
@@ -110,14 +133,14 @@
 
         <div class="mb-3">
             <label for="ExpireDate" class="form-label">Expire Date</label>
-            <InputDate id="ExpireDate" class="form-control" @bind-Value="customer.startHighlightDate" />
+            <InputDate id="ExpireDate" class="form-control" @bind-Value="customer.startHighlightDate" placeholder="Choose Date" />
             <ValidationMessage For="@(() => customer.ExpireDate)" />
         </div>
 
         <div class="mb-3">
             <label for="PaymentNote" class="form-label">PaymentNote</label>
             <select id="PaymentNote" class="form-select" @bind="customer.PaymentNote">
-                <option value="">Select Payment Note</option>
+                <option value="">Choose Payment Note</option>
                 @foreach (var category in paymentcatagories)
                 {
                     <option value="@category.gcode">@category.gcode - @category.gname</option>
@@ -127,8 +150,8 @@
         </div>
 
         <div class="mb-3">
-            <label for="ForeignCode" class="form-label">Foreign Code</label>
-            <InputText id="ForeignCode" class="form-control" @bind-Value="customer.ForeignCode" />
+            <label for="ForeignCode" class="form-label">Jubelio Reference Code</label>
+            <InputText id="ForeignCode" class="form-control" @bind-Value="customer.ForeignCode" placeholder="Jubelio Customer Code"  />
             <ValidationMessage For="@(() => customer.ForeignCode)" />
         </div>
 

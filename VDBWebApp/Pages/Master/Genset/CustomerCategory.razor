@@ -1,0 +1,307 @@
+﻿@page "/customercategories"
+
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.Globalization;
+
+
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.CustomerServices CustomerService
+@inject Services.GensetServices GensetService
+@inject NavigationManager Navigation
+
+<div class="container">
+<h3>Customer Category</h3>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-primary mb-2" @onclick="OnAddClicked">Add Genset</button>
+    </div>
+
+    <div class="product-grid">
+        @if (Gensets != null && Gensets.Any())
+        {
+            @foreach (var item in Gensets)
+            {
+                <GensetCard genset="@item"
+                            OnDetailClicked="HandleShowGensetDetail" />
+            }
+        }
+        else if (loading)
+        {
+            <p class="loading-text">Loading data...</p>
+        }
+        else
+        {
+            <p class="no-product-text">No data found! 😞</p>
+        }
+    </div>
+
+
+
+    @if (showModal)
+    {
+        <div class="modal fade show" tabindex="-1" role="dialog" style="display:block;">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Customer Category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseGensetEditModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <EditForm Model="@selectedGenset" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveEditGenset))">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <div class="mb-3">
+                                <label for="GCode" class="form-label">Code</label>
+                                <InputText id="GCode" class="form-control" @bind-Value="selectedGenset.GCode" readonly placeholder="Input Code" />
+                                <ValidationMessage For="@(() => selectedGenset.GCode)" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="Name" class="form-label">Name</label>
+                                <InputText id="Name" class="form-control" @bind-Value="selectedGenset.Gname" placeholder="Input Name" />
+                                <ValidationMessage For="@(() => selectedGenset.Gname)" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="Thumbnail" class="form-label">Thumbnail</label>
+                                <InputText id="Thumbnail" class="form-control" @bind-Value="selectedGenset.Thumbnail" placeholder="Input Thumbnail" />
+                                <ValidationMessage For="@(() => selectedGenset.Gname)" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="GimageUpload" class="form-label">Upload Image</label>
+                                <InputFile id="GimageUpload" OnChange="HandleImageUpload" />
+                                @if (isImageUploaded)
+                                {
+                                    <p class="text-success">Image loaded successfully.</p>
+                                }
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="isActiveCheck"
+                                       @bind="IsActiveBoolEdit" />
+
+                                <label class="form-check-label" for="isActiveCheck">
+                                    Is Active
+                                </label>
+                            </div>
+                    
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseGensetEditModal">Cancel</button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showAddModal)
+    {
+        <div class="modal fade show" tabindex="-1" role="dialog" style="display:block;">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add Customer Category</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseGensetAddModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <EditForm Model="@newGenset" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveAddGenset))">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <div class="mb-3">
+                                <label for="GCode" class="form-label">Code</label>
+                                <InputText id="GCode" class="form-control" @bind-Value="newGenset.GCode" placeholder="Input Code" />
+                                <ValidationMessage For="@(() => newGenset.GCode)" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="Name" class="form-label">Name</label>
+                                <InputText id="Name" class="form-control" @bind-Value="newGenset.Gname" placeholder="Input Name" />
+                                <ValidationMessage For="@(() => newGenset.Gname)" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="Thumbnail" class="form-label">Thumbnail</label>
+                                <InputText id="Thumbnail" class="form-control" @bind-Value="newGenset.Thumbnail" placeholder="Input Thumbnail" />
+                                <ValidationMessage For="@(() => newGenset.Gname)" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="GimageUpload" class="form-label">Upload Image</label>
+                                <InputFile id="GimageUpload" OnChange="HandleImageUpload" />
+                                @if (isImageUploaded)
+                                {
+                                    <p class="text-success">Image loaded successfully.</p>
+                                }
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="isActiveCheck"
+                                       @bind="IsActiveBoolAdd" />
+
+                                <label class="form-check-label" for="isActiveCheck">
+                                    Is Active
+                                </label>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseGensetAddModal">Cancel</button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+
+<ActionModal @ref="SaveConfirmationModal" />
+<WarningModal @ref="warningModal" />
+
+@if (isLoading)
+{
+    <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
+}
+@code {
+
+    private List<Genset> Gensets = new List<Genset>();
+    private bool showModal = false;
+
+    private bool showAddModal = false;
+    private Genset selectedGenset = new();
+    private Genset newGenset = new();
+    private bool loading = false;
+    private bool isImageUploaded = false;
+    private string? errorMessage;
+    private ActionModal? SaveConfirmationModal;
+    private WarningModal warningModal;
+    private bool isLoading = false;
+    public string IsActive = "False";
+    private string gtypepar = "01";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var data = await GensetService.GetGenset(gtypepar, "0", "1", "");
+
+        if (!string.IsNullOrEmpty(data))
+        {
+            Gensets = JsonSerializer.Deserialize<List<Genset>>(data, options);
+
+            foreach (var genset in Gensets)
+            {
+                Console.WriteLine(genset.Gname);   
+            }
+            newGenset.Isactive = "true";
+        }
+    }
+
+    private void HandleShowGensetDetail(Genset genset)
+    {
+        selectedGenset = genset;
+        showModal = true;
+    }
+
+    private void OnAddClicked()
+    {
+        showAddModal = true;
+    }
+
+    private async Task ShowSaveConfirmation(EventCallback confirmAction)
+    {
+        SaveConfirmationModal?.Show(
+            "Apakah Anda yakin ingin Menyimpan?",    // message
+            "oi oi-warning",                         // icon
+            2,                                       // level
+            confirmAction,                           // EventCallback dinamis
+            "Save",                                  // confirm button label
+            true,                                    // show cancel
+            "Cancel"                                 // cancel button label
+        );
+    }
+
+
+    private void SuccessConfirmation()
+    {
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo(Navigation.Uri);
+    }
+
+    private void CloseGensetEditModal()
+    {
+        showModal = false;
+    }
+
+    private void CloseGensetAddModal()
+    {
+        showAddModal = false;
+    }
+
+    private async Task SaveEditGenset()
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+
+        var data = await GensetService.SetEditGenset(selectedGenset, gtypepar);
+
+        await Task.Delay(500);
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+
+    }
+
+    private async Task SaveAddGenset()
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+
+        var data = await GensetService.SetAddGenset(newGenset, gtypepar);
+
+        await Task.Delay(500);
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+
+    }
+
+    private bool IsActiveBoolEdit
+    {
+        get => selectedGenset.Isactive?.ToLower() == "true";
+        set => selectedGenset.Isactive = value ? "true" : "false";
+
+    }
+
+    private bool IsActiveBoolAdd
+    {
+        get => newGenset.Isactive?.ToLower() == "true";
+        set => newGenset.Isactive = value ? "true" : "false";
+
+    }
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10 MB
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var fileBytes = memoryStream.ToArray();
+            selectedGenset.Gimage = Convert.ToBase64String(fileBytes);
+            selectedGenset.GimageType = file.ContentType;
+            isImageUploaded = true;
+        }
+    }
+
+}
+
+
+    
+    

@@ -1,0 +1,217 @@
+﻿@page "/neworderdetail"
+
+
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.Globalization;
+@using VDBWebApp.Pages.Transaction.Order.Order_Component
+
+
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.OrderServices OrderService
+@inject NavigationManager Navigation
+
+<div class="container">
+    <h3>Order Details</h3>
+
+    <!-- Display selected products -->
+    <div class="product-order-grid">
+        @if (orderListCustomers != null && orderListCustomers.Any())
+        {
+            @foreach (var item in orderListCustomers)
+            {
+
+                <VDBWebApp.Pages.Transaction.Order.Order_Component.Product_order_card_admin 
+                orderCustomer="@item"
+                OnRemoveCartSelected="HandleRemoveItemCart" 
+                OnIncreaseQtyItem = "HandleIncreaseQtyItem"
+                OnDecreaseQtyItem= "HandleDecreaseQtyItem"/>
+            }
+        }
+        else if (loading)
+        {
+            <p class="loading-text">Loading data...</p>
+        }
+        else
+        {
+            <p class="no-product-text">No data found! 😞</p>
+        }
+    </div>
+
+    <!-- Button to open modal for selecting products -->
+    <button class="btn btn-primary mb-2" @onclick="OnSearchClik">Search Product</button>
+
+    <!-- Product Modal -->
+   @* <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">Select Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        @foreach (var product in availableProducts)
+                        {
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <img class="card-img-top" src="@product.ImageUrl" alt="@product.Name" />
+                                    <div class="card-body">
+                                        <h5 class="card-title">@product.Name</h5>
+                                        <p class="card-text">@product.Category</p>
+                                        <p class="card-text">Price: @product.Price.ToString("C", CultureInfo.CurrentCulture)</p>
+                                        <button class="btn btn-primary" @onclick="() => AddToCart(product)">Add to Cart</button>
+                                        <button class="btn btn-warning" @onclick="() => AddToWishlist(product)">Add to Wishlist</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>*@
+
+    <!-- Order Summary -->
+    @*@<div class="order-summary mt-4">
+        <h4>Order Summary</h4>
+        <p><strong>Total Quantity:</strong> @totalQuantity</p>
+        <p><strong>Total Price:</strong> @totalPrice.ToString("C", CultureInfo.CurrentCulture)</p>
+        <p><strong>Remarks:</strong> @remark</p>
+
+        <div class="shipping-info">
+            <h5>Shipping Information</h5>
+            <p><strong>Recipient Name:</strong> @recipientName</p>
+            <p><strong>Recipient Address:</strong> @recipientAddress</p>
+            <p><strong>Recipient Phone:</strong> @recipientPhone</p>
+            <p><strong>Courier:</strong> @courier</p>
+            <p><strong>Tracking Number:</strong> @trackingNumber</p>
+        </div>
+
+        <button class="btn btn-success" @onclick="Checkout">Checkout</button>
+    </div>*@
+</div>
+
+@if (isLoading)
+{
+    <ProgressCart LoadingImageUrl="images/material/cart_add_gif.gif" />
+}
+
+@if (showSearchProductModal)
+{
+    <VDBWebApp.Pages.Transaction.Order.Order_Component.Search_order 
+                                                                    OnModalClosed="CloseLookupModal" 
+                                                                    OnCartClicked="HandleSelectedCart"/>
+}
+
+@code {
+    private bool showModal = false;
+    private List<Product> availableProducts = new List<Product>(); // Data produk yang bisa dipilih
+    private List<Product> selectedProducts = new List<Product>(); // Produk yang dipilih oleh pengguna
+    private List<Product> wishlist = new List<Product>(); // Wishlist produk
+    private int totalQuantity => selectedProducts.Count; // Menghitung jumlah produk
+                                                         //private decimal totalPrice => selectedProducts.Sum(p => p.Price); // Total harga produk
+    private string remark = "Please deliver as soon as possible.";
+    private string recipientName = "John Doe";
+    private string recipientAddress = "123 Main St, City, Country";
+    private string recipientPhone = "123-456-7890";
+    private string courier = "XYZ Courier";
+    private string trackingNumber = "123456789";
+
+    private bool loading = false;
+    private bool isLoading = false;
+    private bool showSearchProductModal = false;
+    private string customerpersonid = "";
+    private string itemIdCartToRemove = "";
+    private List <OrderListCustomers> orderListCustomers = new List<OrderListCustomers>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        customerpersonid = await LocalStorage.GetItemAsync<string>("selectedOrderCustomerId");
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var data = await OrderService.GetListOrder(customerpersonid);
+
+        if (!string.IsNullOrEmpty(data))
+        {
+            orderListCustomers = JsonSerializer.Deserialize<List<OrderListCustomers>>(data, options) ?? new List<OrderListCustomers>();
+
+        }
+    }
+
+    private void CloseLookupModal()
+    {
+        showSearchProductModal = false;
+    }
+
+    private void HandleRemoveItemCart(OrderListCustomers orderListCustomer)
+    {
+        itemIdCartToRemove = orderListCustomer.Item_Id;
+        Console.WriteLine(itemIdCartToRemove);
+    }
+
+    private void HandleIncreaseQtyItem(OrderListCustomers orderListCustomer)
+    {
+        Console.WriteLine(orderListCustomer.Qty);
+    }
+
+    private void HandleDecreaseQtyItem(OrderListCustomers orderListCustomer)
+    {
+        Console.WriteLine(orderListCustomer.Qty);
+    }
+
+    private async Task HandleSelectedCart(Product prd)
+    {
+        isLoading = true;
+        StateHasChanged(); // untuk trigger render UI
+
+        await Task.Delay(1000);
+        Console.WriteLine(prd.item_id);
+        await Task.Delay(1000);
+
+        isLoading = false;
+        StateHasChanged(); // pastikan re-render setelah selesai
+    }
+
+    private void OnSearchClik()
+    {
+        showSearchProductModal = true;
+    }
+
+    private void AddToCart(Product product)
+    {
+        selectedProducts.Add(product);
+    }
+
+    private void AddToWishlist(Product product)
+    {
+        wishlist.Add(product);
+    }
+
+    private void RemoveFromCart(Product product)
+    {
+        selectedProducts.Remove(product);
+    }
+
+    private void Checkout()
+    {
+        // Implementasi checkout bisa berupa pengiriman data ke API atau proses lainnya
+        Console.WriteLine("Checkout process started...");
+    }
+
+    public class Productax
+    {
+        public string Name { get; set; }
+        public string Category { get; set; }
+        public decimal Price { get; set; }
+        public string ImageUrl { get; set; }
+    }
+}

@@ -1,0 +1,10 @@
+﻿<div class="loading-overlay">
+    <img src="@LoadingImageUrl" alt="Loading..." class="loading-large-image-centered" />
+</div>
+
+
+@code {
+    [Parameter]
+    public string LoadingImageUrl { get; set; } = "images/LogoVDB.gif"; // Path default ke gambar loading
+
+}

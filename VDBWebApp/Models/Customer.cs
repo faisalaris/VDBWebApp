@@ -81,4 +81,30 @@ namespace VDBWebApp.Models
         public string? IsActive { get; set; }
     }
 
+    public class CustomerUser
+    {
+        [Required(ErrorMessage = "Please fill Mandatory Field")]
+        public string UserId { get; set; }
+        [Required(ErrorMessage = "Please fill Mandatory Field")]
+        public string UserPassword { get; set; }
+        public string RangePeriod { get; set; } 
+        public string UserExpireDate { get; set; }
+        [Required(ErrorMessage = "Please fill Mandatory Field")]
+        public string StartDate { get; set; }
+
+        [JsonIgnore]
+        public DateTime? StartDate_DateType
+        {
+            get => DateTime.TryParse(StartDate, out var result) ? result : null;
+            set => StartDate = value?.ToString("yyyy-MM-dd");
+        }
+        [JsonIgnore]
+        public DateTime? UserExpireDate_DateType
+        {
+            get => DateTime.TryParse(UserExpireDate, out var result) ? result : null;
+            set => UserExpireDate = value?.ToString("yyyy-MM-dd");
+        }
+
+    }
+
 }
