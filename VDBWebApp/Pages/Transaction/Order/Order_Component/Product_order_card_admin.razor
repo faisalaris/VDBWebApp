@@ -8,18 +8,37 @@
 
     <div class="cart-details">
         <h5 class="cart-title">@orderCustomer.Item_Name</h5>
-        <p class="cart-price">Rp @orderCustomer.Price</p>
+        <p class="cart-price">@orderCustomer.Price</p>
         <p class="cart-stock">Stock: @orderCustomer.Stock</p>
     </div>
 
     <div class="cart-actions">
-        <img src="images/material/delete.png" class="delete-icon" @onclick="RemoveItemFromCart" title="Remove" />
+        @if (type == "cart")
+        {
+            if (isWhish)
+            {
+                <img src="images/material/wishlist_fill.png" class="delete-icon" @onclick="RemoveItemFromWhish" title="whish list" />
+            }
+            else
+            {
+                <img src="images/material/wishlist_nofill.png" class="delete-icon" @onclick="AddItemFromWhish" title="whish list" />
+            }
+            <img src="images/material/delete.png" class="delete-icon" @onclick="RemoveItemFromCart" title="Remove" />
 
-        <div class="qty-controls">
-            <button class="qty-btn" @onclick="DecreaseQty">−</button>
-            <span class="qty-text">@orderCustomer.Qty</span>
-            <button class="qty-btn" @onclick="IncreaseQty">+</button>
-        </div>
+            <div class="qty-controls">
+                <button class="qty-btn" @onclick="DecreaseQty">−</button>
+                <span class="qty-text">@orderCustomer.Qty</span>
+                <button class="qty-btn" @onclick="IncreaseQty">+</button>
+            </div>
+
+        }
+        else
+        {
+            <img src="images/material/cart_add.png" class="delete-icon" @onclick="AddItemFromCart" title="Add item" />
+            <img src="images/material/delete.png" class="delete-icon" @onclick="RemoveItemFromWhish" title="Remove" />
+        }
+
+       
     </div>
 </div>
 @code {
@@ -27,7 +46,21 @@
     public OrderListCustomers orderCustomer { get; set; }
 
     [Parameter]
+    public string type { get; set; }
+    [Parameter]
+    public bool isWhish { get; set; } = false;
+
+    [Parameter]
     public EventCallback<OrderListCustomers> OnRemoveCartSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<OrderListCustomers> OnRemoveWhishSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<OrderListCustomers> OnAddWhishSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<OrderListCustomers> OnAddCartSelected { get; set; }
 
     [Parameter]
     public EventCallback<OrderListCustomers> OnIncreaseQtyItem { get; set; }
@@ -42,11 +75,28 @@
         await OnRemoveCartSelected.InvokeAsync(orderCustomer);
     }
 
+    private async Task RemoveItemFromWhish()
+    {
+        await OnRemoveWhishSelected.InvokeAsync(orderCustomer);
+    }
+
+    private async Task AddItemFromCart()
+    {
+        await OnAddCartSelected.InvokeAsync(orderCustomer);
+    }
+
+    private async Task AddItemFromWhish()
+    {
+        await OnAddWhishSelected.InvokeAsync(orderCustomer);
+    }
+
     private async Task IncreaseQty()
     {
         if (int.TryParse(orderCustomer.Qty, out int qty))
         {
+            Console.WriteLine($"Current qty: {qty}");
             qty++;
+            Console.WriteLine($"After qty: {qty}");
             orderCustomer.Qty = qty.ToString();
         }
 

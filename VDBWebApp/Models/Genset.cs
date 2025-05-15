@@ -79,4 +79,10 @@ namespace VDBWebApp.Models
             return bytes;
         }
     }
+
+    public class BannerList
+    {
+        public string? BannerImage { get; set; }
+    
+    }
 }

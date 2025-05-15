@@ -44,8 +44,7 @@
         <div class="order-details-container">
             @foreach (var order in orderDetailsList)
             {
-                Console.WriteLine(order.ordercode);
-                <div class="order-card">
+                <div class="order-card" style="cursor:pointer;" @onclick="@(() => GotoOrderDetail(order))">
                     <p class="order-code">@order.ordercode</p>
                     <p class="order-code">@order.duration</p>
                     <p class="order-date">@order.orderdate</p>
@@ -115,7 +114,7 @@ else
                     await LoadOrderDetails(personid, "NEW");
                     StateHasChanged();
                 }
-            
+
             }
         }
         catch (Exception ex)
@@ -176,6 +175,28 @@ else
         };
     }
 
+    private async Task GotoOrderDetail(OrderDetail order)
+    {
+        var orderCode = order.ordercode;
+        var status = order.orderstatus;
+        var personname = order.personname;
+        var personId = order.personid;
+        var personCategory = order.personcategory;
+        var paymentNote = order.paymentnotename;
+
+        
+        if (orderCode != null)
+        {
+            await LocalStorage.SetItemAsync("ordercode", orderCode);
+            await LocalStorage.SetItemAsync("orderstatus", status);
+            await LocalStorage.SetItemAsync("personname", personname);
+            await LocalStorage.SetItemAsync("selectedOrderCustomerId", personId);
+            await LocalStorage.SetItemAsync("personcategory", personCategory);
+            await LocalStorage.SetItemAsync("paymentnote", paymentNote);
+            Navigation.NavigateTo($"/orderdetailcheck");
+        }
+    }
+
     public class DashboardData
     {
         public string? countnew { get; set; }
@@ -194,5 +215,8 @@ else
         public string? orderamount { get; set; }
         public string? custstore { get; set; }
         public string? paymentnotename { get; set; }
+        public string? personid { get; set; }
+        public string? personcategory { get; set; }
+        public string? personname { get; set; }
     }
 }

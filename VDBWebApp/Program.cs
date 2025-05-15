@@ -30,6 +30,7 @@ builder.Services.AddScoped<ProductServices>();
 builder.Services.AddScoped<GensetServices>();
 builder.Services.AddScoped<CustomerServices>();
 builder.Services.AddScoped<OrderServices>();
+builder.Services.AddScoped<UserServices>();
 
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();

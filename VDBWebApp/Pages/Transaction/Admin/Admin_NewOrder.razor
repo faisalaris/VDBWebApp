@@ -25,7 +25,7 @@
                     <h4 class="product-title">@item.PersonName</h4>
                     <p class="product-sku">@item.PersonCategory</p>
                     <p class="product-sku">@item.PaymentNote</p>
-                    <button class="btn btn-primary product-detail-button" @onclick="() => GotoOrder(item.PersonId)">Choose</button>
+                    <button class="btn btn-primary product-detail-button" @onclick="() => GotoOrder(item)">Choose</button>
                 </div>
             }
         }
@@ -59,13 +59,13 @@
             if (!string.IsNullOrEmpty(data))
             {
                 orderCustomers = JsonSerializer.Deserialize<List<OrderCustomer>>(data, options) ?? new List<OrderCustomer>();
-                Console.WriteLine(data);
             }
         }
 
-        private async Task GotoOrder(string id)
+    private async Task GotoOrder(OrderCustomer order)
         {
-            await LocalStorage.SetItemAsync("selectedOrderCustomerId", id.ToString());
+            await LocalStorage.SetItemAsync("selectedOrderCustomerId", order.PersonId.ToString());
+            await LocalStorage.SetItemAsync("customerData", order);
             Navigation.NavigateTo($"/neworderdetail/");
         }
 

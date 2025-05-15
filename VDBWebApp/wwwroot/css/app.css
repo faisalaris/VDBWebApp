@@ -413,6 +413,11 @@ a, .btn-link {
     border: 1px solid var(--light-brown); /* Light gray border */
     font-size: 0.9rem;
 }
+    .order-card:hover {
+        background-color: var(--dark-brown);
+        color: var(--warm-white); /* Ubah teks jadi terang saat latar gelap */
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
 
     .order-card p {
         margin-bottom: 5px;
@@ -455,6 +460,8 @@ a, .btn-link {
         border-radius: 5px;
         font-size: 0.8rem;
     }
+
+
 
     .order-card .order-status-payment {
         background-color: var(--dark-brown); /* Green for "Baru" */
@@ -502,6 +509,32 @@ a, .btn-link {
         color: var(--brown);
         font-size: 0.8rem;
     }
+    .order-card:hover .order-code,
+    .order-card:hover .order-date,
+    .order-card:hover .order-desc,
+    .order-card:hover .order-amount,
+    .order-card:hover .cust-store,
+    .order-card:hover .payment-note,
+    .order-card:hover .order-status-label {
+        color: var(--warm-white);
+    }
+
+    .order-card:hover .order-status {
+        background-color: var(--status-baru); /* tetap hijau */
+        color: var(--warm-white);
+    }
+
+    .order-card:hover .order-status-process {
+        background-color: var(--light-brown);
+        color: var(--warm-white);
+    }
+
+    .order-card:hover .order-status-payment {
+        background-color: var(--dark-brown);
+        color: var(--warm-white);
+    }
+
+
 
 /*********************************************End CSS Untuk Card di Home**************************************************/
 
@@ -581,7 +614,7 @@ a, .btn-link {
 
 .product-order-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 2fr;
     gap: 20px;
 }
 
@@ -662,6 +695,15 @@ a, .btn-link {
     font-style: italic;
     color: var(--brown); /* Atau warna yang sesuai */
     margin-top: 20px;
+}
+
+.highlight-card {
+    border: 2px solid var(--brown);
+    border-radius: 10px;
+    padding: 20px;
+    background-color: var(--warm-white);
+    max-width: 150px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 /*************************************************** END CSS untuk Card Product ***********************************************/

@@ -1,7 +1,4 @@
-﻿@page "/neworderdetail"
-
-
-@using System.Text.Json
+﻿@using System.Text.Json
 @using Blazored.LocalStorage
 @using Radzen
 @using Radzen.Blazor
@@ -18,9 +15,9 @@
 @inject NavigationManager Navigation
 
 <div class="container">
-    <p class="text-muted mb-4">Customer Name: <strong>@customer.PersonName</strong></p>
-    <p class="text-muted mb-4">Order ID: <strong>@orderid</strong></p>
-    <p class="text-muted mb-4">Payment Note: <strong>@customer.PaymentNote</strong></p>
+    <p class="text-muted mb-4">Customer Name: <strong>@personName</strong></p>
+    <p class="text-muted mb-4">Order ID: <strong>@OrderCodeId</strong></p>
+    <p class="text-muted mb-4">Payment Note: <strong>@paymentNote</strong></p>
     <hr />
     <h3>Order List</h3>
 
@@ -28,20 +25,14 @@
     <div class="product-order-grid">
         @if (orderListCustomers != null && orderListCustomers.Any())
         {
-            
-                <VDBWebApp.Pages.Transaction.Order.Order_Component.Product_order_grid 
-                productorders="@orderListCustomers" 
-                OnEditClicked ="HandleClicked"
-                OnDeleteClicked="HandleRemoveItemCart"
-                /> 
 
-                @*
-                <VDBWebApp.Pages.Transaction.Order.Order_Component.Product_order_card_admin 
-                orderCustomer="@item"
-                OnRemoveCartSelected="HandleRemoveItemCart" 
-                OnIncreaseQtyItem = "HandleIncreaseQtyItem"
-                OnDecreaseQtyItem= "HandleDecreaseQtyItem"/>*@
-            
+            <VDBWebApp.Pages.Transaction.Order.Order_Component.Product_order_grid productorders="@orderListCustomers"
+                                                                                  OnEditClicked="HandleClicked"
+                                                                                  OnDeleteClicked="HandleRemoveItemCart" 
+                                                                                  Status="@Status"
+                                                                                  UserType="@usertype"
+                                                                                  />
+
         }
         else if (loading)
         {
@@ -52,17 +43,51 @@
             <p class="no-product-text">No data found! 😞</p>
         }
     </div>
+    @if (Status?.ToUpper() == "NEW" && usertype == "ADMIN" && OrderCodeId == "")      
+    {
+        <!-- Button to open modal for selecting products -->
+        <div class="d-flex mb-2" style="gap: 10px;">
+            <button class="btn btn-primary" @onclick="OnSearchClik">Add Product</button>
+            <button class="btn btn-success" @onclick="(() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnChekOutClick), msgCheckout))">CheckOut</button>
+        </div>
+    }
+    else if (Status?.ToUpper() == "NEW" && usertype == "ADMIN" && OrderCodeId != "")
+    {
+        <div class="d-flex mb-2" style="gap: 10px;">
+            <button class="btn btn-primary" @onclick="OnSearchClik">Add Product</button>
+            <button class="btn btn-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnConfirmClick),msgConfirm)">Confirm Order</button>
+            <button class="btn btn-outline-danger" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnCancelClick),msgCancel)">Cancel Order</button>
+            <button class="btn btn-primary" @onclick="OnSearchClik">Delivery Label</button>
+        </div>
+    }
+    else if (usertype != "ADMIN" && (Status?.ToUpper() == "NEW" || Status?.ToUpper() == "PAYMENT") && OrderCodeId != "")
+    {
+        <div class="d-flex mb-2" style="gap: 10px;">
+            <button class="btn btn-outline-danger" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnCancelClick),msgCancel)">Cancel Order</button>
+        </div>
+    }
 
-    <!-- Button to open modal for selecting products -->
-    <div class="d-flex mb-2" style="gap: 10px;">
-        <button class="btn btn-primary" @onclick="OnSearchClik">Add Product</button>
-        <button class="btn btn-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnChekOutClick),msgCheckout)">CheckOut</button>
-    </div>
-    
-    
+    else if (usertype?.ToUpper()=="ADMIN" && Status?.ToUpper()=="PAYMENT" && OrderCodeId != "")
+    {
+        <div class="d-flex mb-2" style="gap: 10px;">
+            <button class="btn btn-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnPaymentClick),msgPayment)">Confirm Payment</button>
+            <button class="btn btn-outline-danger" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnCancelClick),msgCancel)">Cancel Order</button>
+            <button class="btn btn-outline-primary" @onclick="OnLabelClick">Delivery Label</button>
+            <button class="btn btn-outline-success" @onclick="OnInvoiceClick">Invoice</button>
+        </div>
+    }
+    else if (usertype?.ToUpper() == "ADMIN" && Status?.ToUpper() == "PROCESS" && OrderCodeId != "")
+    {
+        <div class="d-flex mb-2" style="gap: 10px;">
+            <button class="btn btn-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnClosedClick),msgClosed)">Close Order</button>
+            <button class="btn btn-outline-primary" @onclick="OnLabelClick">Delivery Label</button>
+            <button class="btn btn-outline-success" @onclick="OnInvoiceClick">Invoice</button>
+        </div>
+    }
 
     <hr />
-    @if (customer.PersonCategory == "DSM")
+
+    @if (personCategory == "DSM")
     {
         <div class="order-summary p-3 border rounded">
             <h4 class="text-center">Order Summary</h4>
@@ -75,29 +100,26 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Total Quantity</label>
-                    <input type="text" class="form-control"  readonly @bind="orderSummary.TotalQty" />
+                    <input type="text" class="form-control" readonly @bind="orderSummary.TotalQty" />
                 </div>
-                @if (usertype == "ADMIN")
-                {
-                    <div class="col-md-6">
-                        <label class="form-label">Discount</label>
-                        <input type="number" class="form-control" @bind="orderSummary.DiscDecimal" />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Delivery Cost</label>
-                    <input type="number" class="form-control" @bind="orderSummary.DeliveryCostDecimal" />
+                <div class="col-md-6">
+                    <label class="form-label">Discount</label>
+                    <input type="number" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DiscDecimal" />
                 </div>
-                }
+                <div class="col-md-6">
+                    <label class="form-label">Delivery Cost</label>
+                    <input type="number" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DeliveryCostDecimal" />
+                </div>
                 <div class="col-12">
                     <label class="form-label">Remark</label>
-                    <InputTextArea class="form-control" @bind-Value="orderSummary.Remark" />
+                    <InputTextArea class="form-control" readonly="@IsReadOnly" @bind-Value="orderSummary.Remark" />
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Sender Store Name</label>
                     <div class="input-group mb-1">
                         <input type="text" class="form-control" readonly @bind="selectedStore.StoreName" />
 
-                        <button class="btn btn-outline-secondary" @onclick="OpenStoreLookupModal" type="button" title="Find Store">
+                        <button class="btn btn-outline-secondary" disabled="@IsReadOnly" @onclick="OpenStoreLookupModal" type="button" title="Find Store">
                             <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
                         </button>
                     </div>
@@ -106,22 +128,22 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Resi No</label>
-                    <input type="text" class="form-control" @bind="orderSummary.DeliveryReceiptNo" />
+                    <input type="text" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DeliveryReceiptNo" />
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Recipient Name</label>
-                    <input type="text" class="form-control" @bind="orderSummary.RecName" />
+                    <input type="text" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.RecName" />
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Recipient Phone No</label>
-                    <input type="text" class="form-control" @bind="orderSummary.RecPhoneNo" />
+                    <input type="text" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.RecPhoneNo" />
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Recipient Address</label>
                     <div class="input-group mb-1">
                         <input type="text" class="form-control" readonly @bind="orderSummary.RecStreetAddress" />
 
-                        <button class="btn btn-outline-secondary" @onclick="OpenAddressLookupModal" type="button" title="Find Address">
+                        <button class="btn btn-outline-secondary" disabled="@IsReadOnly" @onclick="OpenAddressLookupModal" type="button" title="Find Address">
                             <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
                         </button>
                     </div>
@@ -131,7 +153,7 @@
                     <div class="input-group mb-1">
                         <input type="text" class="form-control" readonly @bind="selectedGenset.Gname" />
 
-                        <button class="btn btn-outline-secondary" @onclick="OpenCourierLookupModal" type="button" title="Find Store">
+                        <button class="btn btn-outline-secondary" disabled="@IsReadOnly" @onclick="OpenCourierLookupModal" type="button" title="Find Courier">
                             <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
                         </button>
                     </div>
@@ -152,35 +174,28 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Total Quantity</label>
-                    <input type="text" class="form-control"  readonly @bind="orderSummary.TotalQty" />
+                    <input type="text" class="form-control" readonly @bind="orderSummary.TotalQty" />
                 </div>
-                @if (usertype == "ADMIN")
-                {
-                    <div class="col-md-6">
-                        <label class="form-label">Discount</label>
-                    <input type="number" class="form-control" @bind="orderSummary.DiscDecimal" />
+                <div class="col-md-6">
+                    <label class="form-label">Discount</label>
+                    <input type="number" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DiscDecimal" />
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Delivery Cost</label>
-                    <input type="number" class="form-control" @bind="orderSummary.DeliveryCostDecimal" />
+                    <input type="number" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DeliveryCostDecimal" />
                 </div>
-                }
                 <div class="col-md-6">
-                    <label class="form-label">Sender Store Name</label>
+                    <label class="form-label">Recipient Address</label>
                     <div class="input-group mb-1">
                         <input type="text" class="form-control" readonly @bind="selectedStore.StoreName" />
 
-                        <button class="btn btn-outline-secondary" @onclick="OpenStoreLookupModal" type="button" title="Cari Store">
-                            <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
-                        </button>
-                    </div>
+                   </div>
                     <input type="text" class="form-control mb-1" readonly @bind="selectedStore.StreetAddress" />
                     <input type="text" class="form-control mb-1" readonly @bind="selectedStore.PhoneNo" />
                 </div>
-             </div>
+            </div>
         </div>
-     
-    } 
+    }
 
 </div>
 @if (isLoading)
@@ -190,9 +205,8 @@
 
 @if (showSearchProductModal)
 {
-    <VDBWebApp.Pages.Transaction.Order.Order_Component.Search_order 
-                                                                    OnModalClosed="CloseLookupModal" 
-                                                                    OnCartClicked="HandleSelectedCart"/>
+    <VDBWebApp.Pages.Transaction.Order.Order_Component.Search_order OnModalClosed="CloseLookupModal"
+                                                                    OnCartClicked="HandleSelectedCart" />
 }
 
 @if (openAddressModal)
@@ -201,7 +215,7 @@
                         OnModalClosed="CloseAddressLookupModal"
                         AddressCodeSeq="@orderSummary.RecAddressCode"
                         AddressAlamat="@orderSummary.RecStreetAddress" />
-    
+
 }
 @if (openCourierModal)
 {
@@ -259,7 +273,7 @@
         </div>
     </div>
 }
-   
+
 
 @if (openStoreModal)
 {
@@ -326,13 +340,13 @@
 @if (showEditQty)
 {
 
-  <div class="modal fade show" tabindex=" -1" role="dialog" style="display:block;">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Edit</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseEditQtyModal"></button>
-            </div>
+    <div class="modal fade show" tabindex=" -1" role="dialog" style="display:block;">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseEditQtyModal"></button>
+                </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="Quantity" class="form-label">Quantity</label>
@@ -343,29 +357,28 @@
                         <InputTextArea id="Remark" class="form-control" @bind-Value="selectedOrderListCustomer.Remark" />
                         <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditQty">Save</button>
                     </div>
-                    <hr/>
-                    @if (usertype == "ADMIN")
-                    {
-                        <div class="mb-3">
-                            <label for="DiscPercent" class="form-label">Discount By Percentage (%)</label>
-                            <InputNumber id="DiscPercent" class="form-control" @bind-Value="discPercent" />
-                            <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditDiscPercent">Save Percentage</button>
-                        </div>
-                        <hr />
-                        <div class="mb-3">
-                            <label for="DiscAmount" class="form-label">Discount By Amount</label>
-                            <InputNumber id="DiscAmount" class="form-control" @bind-Value="discAmount" />
-                            <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditDiscAmount">Save Amount</button>
-                        </div>
-                    }
+                    <hr />
+                    <div class="mb-3">
+                        <label for="DiscPercent" class="form-label">Discount By Percentage (%)</label>
+                        <InputNumber id="DiscPercent" class="form-control" @bind-Value="discPercent" />
+                        <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditDiscPercent">Save Percentage</button>
+                    </div>
+                    <hr />
+                    <div class="mb-3">
+                        <label for="DiscAmount" class="form-label">Discount By Amount</label>
+                        <InputNumber id="DiscAmount" class="form-control" @bind-Value="discAmount" />
+                        <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditDiscAmount">Save Amount</button>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseEditQtyModal">Close</button>
                 </div>
-         </div>
-     </div>
-  </div>
+            </div>
+        </div>
+    </div>
 }
+
+
 
 <ActionModal @ref="SaveConfirmationModal" />
 <WarningModal @ref="warningModal" />
@@ -375,7 +388,20 @@
     <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
 }
 @code {
-    
+
+    [Parameter]
+    public string? Status { get; set; }
+
+    [Parameter]
+    public string? usertype { get; set; }
+
+    [Parameter]
+    public string? OrderCodeId { get; set; }
+
+    private bool IsReadOnly =>
+    (Status ?? "NEW").ToUpper() != "NEW" ||
+    ((Status ?? "NEW").ToUpper() == "NEW" && (usertype?.ToUpper() != "ADMIN"));
+
     private string msgCheckout = "Are you sure to check out?";
     private string msgConfirm = "Are you sure to confirm this order?";
     private string msgCancel = "Are you sure to cancel this order?";
@@ -392,26 +418,32 @@
     private List<Genset> Gensets = new List<Genset>();
     private Genset selectedGenset = new();
     private string gtypepar = "02";
-    private string Status = "NEW";
 
     private bool loading = false;
     private bool isLoading = false;
 
     private bool isLoadingMenu = false;
     private bool showSearchProductModal = false;
-    private bool showEditQty=false;
+    private bool showEditQty = false;
     private bool openStoreModal = false;
-    private bool openAddressModal =false;
+    private bool openAddressModal = false;
     private bool openCourierModal = false;
+    private bool openLabelPdf = false;
+    private bool openInvPdf = false;
+
     private string customerpersonid = "";
     private string userid = "";
     private string itemIdCartToRemove = "";
     private string orderid = "";
     private decimal discPercent = 0;
     private decimal discAmount = 0;
-    private string? usertype = "";
+    private string personName = "";
+    private string personCategory = "";
+    private string paymentNote = "";
     private int qtyPrev = 0;
-    private List <OrderListCustomers> orderListCustomers = new List<OrderListCustomers>();
+    private string? PdfUrl;
+
+    private List<OrderListCustomers> orderListCustomers = new List<OrderListCustomers>();
     private OrderCustomer customer = new OrderCustomer();
     private Response response = new Response();
 
@@ -420,20 +452,32 @@
     protected override async Task OnInitializedAsync()
     {
         isLoadingMenu = true;
-        customerpersonid = await LocalStorage.GetItemAsync<string>("selectedOrderCustomerId");
-        userid = await LocalStorage.GetItemAsync<string>("userid") ?? "";
-        orderid = await LocalStorage.GetItemAsync<string>("OrderId") ?? "";
-        usertype = await LocalStorage.GetItemAsync<string>("usertype") ?? "";
-
         await FetchData();
+        Console.WriteLine($"Flag : {IsReadOnly}");
+        Console.WriteLine($"Flag : {Status}");
+        Console.WriteLine($"Flag : {usertype}");
         isLoadingMenu = false;
     }
 
     private async Task FetchData()
     {
+
+        customerpersonid = await LocalStorage.GetItemAsync<string>("selectedOrderCustomerId");
+        personName = await LocalStorage.GetItemAsync<string>("personname") ?? "";
+        personCategory = await LocalStorage.GetItemAsync<string>("personcategory") ?? "";
+        paymentNote = await LocalStorage.GetItemAsync<string>("paymentnote") ?? "";
+        userid = await LocalStorage.GetItemAsync<string>("userid") ?? "";
+
+
+        if (Status == "NEW")
+        {
+            var dataorder = await OrderService.GetListReplicateTransactionOrderDetail(OrderCodeId,customerpersonid);
+        }
+
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var data = await OrderService.GetListOrder(customerpersonid);
-        var user = await LocalStorage.GetItemAsync<string>("customerData");
+        var data = await OrderService.GetListTransactionOrderDetail(OrderCodeId);
+        var dataheader = await OrderService.GetListTransactionOrderHeader(OrderCodeId);
+
         var datastore = await CustomerService.GetCustomerStore(customerpersonid);
         var datacourier = await GensetService.GetGenset(gtypepar, "0", "1", "");
 
@@ -443,15 +487,23 @@
             orderListCustomers = JsonSerializer.Deserialize<List<OrderListCustomers>>(data, options) ?? new List<OrderListCustomers>();
 
         }
-        if (!string.IsNullOrEmpty(user))
+
+        if (!string.IsNullOrEmpty(dataheader))
         {
-            customer = JsonSerializer.Deserialize<OrderCustomer>(user, options) ?? new OrderCustomer();
+            orderSummary = JsonSerializer.Deserialize<List<Order>>(dataheader, options).FirstOrDefault() ?? new();
+
         }
+
+
+
         if (!string.IsNullOrEmpty(datastore))
         {
             customersstore = JsonSerializer.Deserialize<List<CustomerStore>>(datastore, options);
-            selectedStore = customersstore.FirstOrDefault();
-            orderSummary.SenderStoreId = selectedStore.StoreId;
+
+            if (personCategory == "DSM")
+            { selectedStore = customersstore.FirstOrDefault(s => s.StoreId == orderSummary.SenderStoreId); }
+            else
+            { selectedStore = customersstore.FirstOrDefault(s => s.StoreId == orderSummary.RecStoreId); }
         }
 
         if (!string.IsNullOrEmpty(datacourier))
@@ -475,7 +527,7 @@
     {
         //var data = OrderService.SetQtyCart(customerpersonid, selectedOrderListCustomer.Item_Id, selectedOrderListCustomer.Qty);
 
-        var data = await OrderService.SetQtyCart(customerpersonid, selectedOrderListCustomer.Item_Id, selectedOrderListCustomer.Qty,selectedOrderListCustomer.Remark);
+        var data = await OrderService.SetQtyCart(customerpersonid, selectedOrderListCustomer.Item_Id, selectedOrderListCustomer.Qty, selectedOrderListCustomer.Remark);
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         if (!string.IsNullOrEmpty(data))
         {
@@ -565,12 +617,12 @@
 
     private void SuccessConfirmation()
     {
-
+        Navigation.NavigateTo("/home");
     }
 
     private void SuccessConfirmationCheckout()
     {
-        if (customer.PersonCategory == "DSM")
+        if (personCategory == "DSM")
         {
             Navigation.NavigateTo("/productetalase");
         }
@@ -579,6 +631,8 @@
             Navigation.NavigateTo("/home");
         }
     }
+
+
 
     private async Task HandleRemoveItemCart(OrderListCustomers orderListCustomer)
     {
@@ -609,11 +663,6 @@
         await FetchData();
     }
 
-
-    private void HandleIncreaseQtyItem(OrderListCustomers orderListCustomer)
-    {
-        Console.WriteLine(orderListCustomer.Qty);
-    }
 
     private void HandleClicked(OrderListCustomers orderListCustomer)
     {
@@ -684,7 +733,8 @@
     private async Task OnChekOutClick()
     {
 
-        if (customer.PersonCategory == "DSM")
+
+        if (personCategory == "DSM")
         {
             orderSummary.SenderAddressCode = selectedStore.AddressCode;
             orderSummary.SenderStoreId = selectedStore.StoreId;
@@ -704,17 +754,14 @@
         orderSummary.ItemList = "";
         orderSummary.CourierCode = selectedGenset.GCode;
 
-
         foreach (var prod in orderListCustomers)
         {
             orderSummary.ItemList = orderSummary.ItemList +
                                     prod.Item_Id + ";" + prod.PriceNum.ToString() + ";" +
                                     prod.DiscAmount.ToString("F2") + ";" + prod.QtyNum.ToString("F0") + ";*";
         }
-
         
-
-        var data = await OrderService.SetOrderInsertSO(customerpersonid,userid, orderSummary);
+        var data = await OrderService.SetOrderInsertSO(customerpersonid, userid, orderSummary);
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
         if (!string.IsNullOrEmpty(data))
@@ -740,16 +787,84 @@
             }
         }
 
-        
         @*Console.WriteLine(userid);
         Console.WriteLine(customerpersonid);
         Console.WriteLine(string.Join(", ", orderSummary.GetType()
      .GetProperties()
      .Select(p => $"{p.Name}: {p.GetValue(orderSummary)}")));*@
-    
+
     }
 
-  @*  private void AddToCart(Product product)
+    private async Task OnConfirmClick()
+    {
+
+        OnChekOutClick();
+
+        var data = await OrderService.SetStatusOrder(OrderCodeId,customerpersonid, "PAYMENT");
+
+        SaveConfirmationModal?.Show($"Success, Order has been confirmed", "bi bi-exclamation-triangle", 2, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+
+    }
+
+    private async Task OnPaymentClick()
+    {
+        var data = await OrderService.SetStatusOrder(OrderCodeId, customerpersonid, "PROCESS");
+
+        SaveConfirmationModal?.Show($"Success, Payment has beed confirmed", "bi bi-exclamation-triangle", 2, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+
+    }
+
+    private async Task OnCancelClick()
+    {
+        var data = await OrderService.SetStatusOrder(OrderCodeId, customerpersonid, "CANCELED");
+
+        SaveConfirmationModal?.Show($"Success, Order has been Canceled", "bi bi-exclamation-triangle", 2, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+
+    }
+
+    private async Task OnClosedClick()
+    {
+        var data = await OrderService.SetStatusOrder(OrderCodeId, customerpersonid, "CLOSED");
+
+        SaveConfirmationModal?.Show($"Success, Order has been Closed", "bi bi-exclamation-triangle", 2, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+
+    }
+
+    private async Task OnInvoiceClick ()
+    {
+        var data = await OrderService.GetFileReport(OrderCodeId, "INV", "PDF");
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var result = JsonSerializer.Deserialize<List<FileImage>>(data, options);
+        var base64 = result?.FirstOrDefault()?.FileImages;
+
+
+        if (!string.IsNullOrEmpty(base64))
+        {
+
+            await JSRuntime.InvokeVoidAsync("downloadBase64File", base64, $"Invoice_{OrderCodeId}.pdf");
+        }
+    }
+
+    private async Task OnLabelClick()
+    {
+        var data = await OrderService.GetFileReport(OrderCodeId, "SLIP", "PDF");
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var result = JsonSerializer.Deserialize<List<FileImage>>(data, options);
+        var base64 = result?.FirstOrDefault()?.FileImages;
+
+
+        if (!string.IsNullOrEmpty(base64))
+        {
+            
+            await JSRuntime.InvokeVoidAsync("downloadBase64File", base64, $"DeliveryLabel_{OrderCodeId}.pdf");
+        }
+        
+    }
+
+
+    @*  private void AddToCart(Product product)
     {
         selectedProducts.Add(product);
     }
@@ -772,12 +887,12 @@
 
     private void OpenStoreLookupModal()
     {
-        openStoreModal = true;    
+        openStoreModal = true;
     }
 
     private void OpenCourierLookupModal()
     {
-        openCourierModal = true; 
+        openCourierModal = true;
     }
 
     private void OpenAddressLookupModal()
@@ -825,13 +940,7 @@
         };
     }
 
-    private void Checkout()
-    {
-        // Implementasi checkout bisa berupa pengiriman data ke API atau proses lainnya
-        Console.WriteLine("Checkout process started...");
-    }
 
-  
 }
 
 <style>

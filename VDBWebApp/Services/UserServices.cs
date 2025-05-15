@@ -1,27 +1,25 @@
 ﻿using System.Text;
-using VDBWebApp.Models;
-using static MudBlazor.CategoryTypes;
 
 namespace VDBWebApp.Services
 {
-    public class OrderServices
+    public class UserServices
     {
 
         private readonly HttpClient _httpClient;
 
-        public OrderServices(HttpClient httpClient)
+        public UserServices(HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
 
-        public async Task<string> GetListCustToOrder()
+        public async Task<string> SetUserItemToCart(string userid, string itemid,string qty)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPA_GetCustToOrder",
+                    SP = $"exec SPW_SetAddCart '{userid}','{itemid}','{qty}'",
                     ParamSP = new { }
                 };
 
@@ -42,14 +40,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> GetListOrder(string personid)
+        public async Task<string> SetUserSubstractCart(string userid, string itemid, string qty)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPW_GetListOrder '{personid}'",
+                    SP = $"exec SPA_SetSubstractCart '{userid}','{itemid}','{qty}'",
                     ParamSP = new { }
                 };
 
@@ -70,41 +68,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> GetListTransactionOrderHeader(string orderid)
+        public async Task<string> SetUserItemToWish(string userid, string itemid)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPA_GetOrderHeader '{orderid}'",
-                    ParamSP = new { }
-                };
-
-                var request = new HttpRequestMessage(HttpMethod.Post, url)
-                {
-                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
-                };
-
-                // Menambahkan header
-
-                var response = await _httpClient.SendAsync(request);
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                return jsonResponse;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-        public async Task<string> GetListTransactionOrderDetail(string orderid)
-        {
-            try
-            {
-                var url = "";
-                var postData = new
-                {
-                    SP = $"exec SPW_GetOrderDetail '{orderid}'",
+                    SP = $"exec SPA_SetAddWish '{userid}','{itemid}'",
                     ParamSP = new { }
                 };
 
@@ -125,70 +96,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> GetListReplicateTransactionOrderDetail(string orderid,string personid)
+        public async Task<string> GetUserItemCart(string userid)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPW_SetReplicateOrder '{orderid}','{personid}'",
-                    ParamSP = new { }
-                };
-
-                var request = new HttpRequestMessage(HttpMethod.Post, url)
-                {
-                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
-                };
-
-                // Menambahkan header
-
-                var response = await _httpClient.SendAsync(request);
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                return jsonResponse;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-        public async Task<string> SetQtyCart(string personid,string itemid,string qty,string remark)
-        {
-            try
-            {
-                var url = "";
-                var postData = new
-                {
-                    SP = $"exec SPW_SetQtyCart '{personid}','{itemid}','{qty}','{remark}'",
-                    ParamSP = new { }
-                };
-
-                Console.WriteLine(postData);
-                var request = new HttpRequestMessage(HttpMethod.Post, url)
-                {
-                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
-                };
-
-                // Menambahkan header
-
-                var response = await _httpClient.SendAsync(request);
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                return jsonResponse;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        public async Task<string> SetDiscAmountCart(string personid, string itemid, string disc)
-        {
-            try
-            {
-                var url = "";
-                var postData = new
-                {
-                    SP = $"exec SPW_SetDiscCart '{personid}','{itemid}','{disc}'",
+                    SP = $"exec SPA_GetListCart '{userid}'",
                     ParamSP = new { }
                 };
 
@@ -209,14 +124,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> SetDiscPercentageCart(string personid, string itemid, string disc)
+        public async Task<string> GetUserItemWhish(string userid)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPW_SetDiscPercentCart '{personid}','{itemid}','{disc}'",
+                    SP = $"exec SPA_GetListWish '{userid}'",
                     ParamSP = new { }
                 };
 
@@ -237,14 +152,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> AddItemToCart(string personid, string itemid)
+        public async Task<string> SetUserSubstractWish(string userid,string itemid)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPW_AddItemCart '{personid}','{itemid}'",
+                    SP = $"exec SPA_SetSubstractWish '{userid}','{itemid}'",
                     ParamSP = new { }
                 };
 
@@ -265,14 +180,14 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> DeleteItemFromCart(string personid, string itemid)
+        public async Task<string> SetUserCartToOrder(string userid)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPW_DeleteItemCart '{personid}','{itemid}'",
+                    SP = $"exec SPW_AddItemOrderFromCart '{userid}'",
                     ParamSP = new { }
                 };
 
@@ -293,21 +208,19 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> SetOrderInsertSO(string personid,string userid, Order order)
+        public async Task<string> SetDropAllItemWish(string userid,string itemlist)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPW_SetInsertSO '{userid}','{personid}','{order.Remark}','{order.SenderStoreId}','{order.SenderName}'," +
-                    $"'{order.SenderAddressCode}','{order.SenderStreetAddress}','{order.SenderPhoneNo}','{order.RecStoreId}','{order.RecName}'," +
-                    $"'{order.RecAddressCode}','{order.RecStreetAddress}','{order.RecPhoneNo}','{order.SubTotalDecimal.ToString("F2")}','{order.Disc}','{order.DeliveryCost}'," +
-                    $"'{order.CourierCode}','{order.DeliveryReceiptNo}','{order.ItemList}','{order.OrderCode}'",
+                    SP = $"exec SPA_SetDropWish '{userid}','{itemlist}'",
                     ParamSP = new { }
                 };
 
-                Console.WriteLine(postData);
+                Console.WriteLine("SetDropAllItemWish: " + postData.SP);
+
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
@@ -325,46 +238,17 @@ namespace VDBWebApp.Services
             }
         }
 
-        public async Task<string> SetStatusOrder(string orderId, string personid, string action)
+        public async Task<string> SetDropAllItemCart(string userid, string itemlist)
         {
             try
             {
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPA_SetOrderStatus '{orderId}','{personid}','{action}'",
+                    SP = $"exec SPA_SetDropCart '{userid}','{itemlist}'",
                     ParamSP = new { }
                 };
 
-                Console.WriteLine(postData);
-                var request = new HttpRequestMessage(HttpMethod.Post, url)
-                {
-                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
-                };
-
-                // Menambahkan header
-
-                var response = await _httpClient.SendAsync(request);
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                return jsonResponse;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-        public async Task<string> GetFileReport(string orderId, string doctype, string filetype)
-        {
-            try
-            {
-                var url = "";
-                var postData = new
-                {
-                    SP = $"exec SPW_GetFile '{orderId}','{doctype}','{filetype}'",
-                    ParamSP = new { }
-                };
-
-                Console.WriteLine(postData);
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")

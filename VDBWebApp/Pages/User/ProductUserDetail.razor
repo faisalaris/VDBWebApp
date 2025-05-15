@@ -1,0 +1,201 @@
+﻿@page "/productuserdetail"
+
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.Globalization;
+
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.ProductServices ProductService
+@inject Services.GensetServices GensetService
+
+<h1>Product Detail</h1>
+
+@if (product != null)
+{
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-4">
+                @if (!string.IsNullOrEmpty(product.thumbnail))
+                {
+                    <img src="@product.thumbnail" alt="@product.item_name" class="img-fluid rounded mb-3" />
+                }
+                else
+                {
+                    <img src="/images/VDBDefault.jpg" alt="@product.item_name" class="img-fluid rounded mb-3" />
+                }
+                <div class="d-flex justify-content-center">
+                    <img src="images/material/cart.png"
+                         alt="Checkout"
+                         class="me-5"
+                         title="cart"
+                         style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+                         @onclick="CartAction" />
+
+                    <img src="images/material/wishlist_nofill.png"
+                         alt="Wishlist"
+                         title="Wishlist"
+                         style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+                         @onclick="WishAction" />
+                </div>
+            </div>
+            <div class="col-md-8">
+
+                    <div class="mb-3">
+                        <label for="item_name" class="form-label">SKU</label>
+                        <InputText id="item_name" class="form-control" readonly @bind-Value="product.item_code" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="item_name" class="form-label">Name</label>
+                        <InputText id="item_name" class="form-control" readonly @bind-Value="product.item_name" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="item_price" class="form-label">WS Price</label>
+                        <InputNumber id="item_price" class="form-control" readonly @bind-Value="itemPrice" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="msrp" class="form-label">MSRP</label>
+                        <InputNumber id="msrp" class="form-control" readonly @bind-Value="msrp" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="item_stock" class="form-label">Stock</label>
+                        <InputNumber id="item_stock" class="form-control" readonly @bind-Value="itemStock" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="brand_name" class="form-label">Brand</label>
+                        <InputText id="brand_name" class="form-control" readonly @bind-Value="product.brand_name" />
+                    </div>
+
+                    @* Ganti InputText dengan select dan input type="text"*@
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">Category</label>
+                        <select id="category_id" class="form-select" disabled @bind="product.category_id">
+                            <option value="">Select Category</option>
+                            @foreach (var category in filteredCategories)
+                            {
+                                <option value="@category.gcode">@category.gcode - @category.gname</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="remark" class="form-label">Remark</label>
+                        <InputTextArea id="remark" class="form-control" readonly @bind-Value="product.remark" />
+                    </div>
+                    <button type="button" class="btn btn-primary" @onclick="GoBack">Back</button>
+            </div>
+        </div>
+    </div>
+}
+else if (errorMessage != null)
+{
+    <p class="alert alert-danger">@errorMessage</p>
+}
+else
+{
+    <p>Loading Product Details...</p>
+}
+
+<ActionModal @ref="SaveConfirmationModal" />
+<WarningModal @ref="warningModal" />
+
+@if (isLoading)
+{
+    <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
+}
+
+@code {
+
+    private Product? product;
+    private string? errorMessage;
+
+    private List<Category> categories = new List<Category>();
+    private List<Category> _filteredCategories = new List<Category>();
+    private string categorySearchTerm = "";
+    private bool showCategories = false;
+    private ActionModal? SaveConfirmationModal;
+    private WarningModal warningModal;
+    private bool isLoading = false;
+
+    int itemPrice = 0;
+    int msrp = 0;
+    int itemStock = 0;
+
+    private string IsActiveString
+    {
+        get => product?.isactive == "True" ? "True" : "False";
+        set => product.isactive = value == "True" ? "1" : "0";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var itemId = await LocalStorage.GetItemAsync<string>("selectedProduct");
+        var Data = await ProductService.GetProduct(itemId ?? "");
+        var category = await GensetService.GetListCategory();
+
+        try
+        {
+
+            if (!string.IsNullOrEmpty(Data))
+            {
+                // Simulasikan pengambilan data dari API (ganti dengan logika Anda)
+                await Task.Delay(500);
+
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                product = JsonSerializer.Deserialize<List<Product>>(Data, options)?.FirstOrDefault();
+                product.item_id = itemId;
+
+                itemPrice = int.Parse(product.item_price);
+                msrp = int.Parse(product.msrp);
+                itemStock = int.Parse(product.item_stock);
+
+                //Console.WriteLine(product.item_id);
+                categories = categories = JsonSerializer.Deserialize<List<Category>>(category, options) ?? new List<Category>();
+                filteredCategories = categories;
+            }
+            if (product == null)
+            {
+                warningModal.Show("Product tidak di temukan", "bi bi-exclamation-triangle", 1);
+                errorMessage = "Product not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            warningModal.Show("Warning, Ada error di page ini", "bi bi-exclamation-triangle", 1);
+            errorMessage = $"Error loading product details: {ex.Message}";
+            Console.WriteLine(ex);
+        }
+    }
+
+    
+
+    private List<Category> filteredCategories
+    {
+        get => _filteredCategories;
+        set
+        {
+            _filteredCategories = value;
+            StateHasChanged(); // Force re-render when filteredCategories changes
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/producthome"); // Arahkan kembali ke halaman produk
+    }
+
+    private async Task CartAction()
+    {
+
+    }
+
+    private async Task WishAction()
+    {
+
+    }
+}

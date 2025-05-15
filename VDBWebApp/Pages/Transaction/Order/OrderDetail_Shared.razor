@@ -1,0 +1,34 @@
+﻿@page "/orderdetailcheck"
+
+@using System.ComponentModel.DataAnnotations
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using Models
+@using System.Collections.Generic;
+
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
+@inject Services.DashboardServices DashboardService
+
+
+<VDBWebApp.Pages.Transaction.Admin.Admin_Component.OrderTransaction_component
+                                                                           usertype="@userType"
+                                                                           Status="@status"
+                                                                           OrderCodeId="@orderCodeId" />
+
+@code {
+
+    private string? orderCodeId;
+    private string? status;
+    private string personId;
+    private string userType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userType = await LocalStorage.GetItemAsync<string>("usertype");
+        status = await LocalStorage.GetItemAsync<string>("orderstatus");
+        orderCodeId = await LocalStorage.GetItemAsync<string>("ordercode");
+    }
+
+}

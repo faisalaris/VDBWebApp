@@ -319,8 +319,8 @@
                             <input class="form-check-input"
                                    type="checkbox"
                                    id="neverExpire"
-                                   @bind="isNeverExpire"
-                                   @bind:after="ToggleNeverExpireDate" />
+                                   checked="@isNeverExpire"
+                                   @onchange="OnNeverExpireChanged" />
                             <label class="form-check-label" for="neverExpire">
                                 Never Expire
                             </label>
@@ -385,8 +385,8 @@
                             <input class="form-check-input"
                                    type="checkbox"
                                    id="neverExpire"
-                                   @bind="isNeverExpire"
-                                   @bind:after="ToggleNeverExpireDate" />
+                                   checked="@isNeverExpire"
+                                   @onchange="OnNeverExpireChanged" />
                             <label class="form-check-label" for="neverExpire">
                                 Never Expire
                             </label>
@@ -638,6 +638,12 @@
             // Kembalikan nilai sebelumnya
             selectedUser.UserExpireDate_DateType = previousExpireDate;
         }
+    }
+
+    private void OnNeverExpireChanged(ChangeEventArgs e)
+    {
+        isNeverExpire = (bool)e.Value;
+        ToggleNeverExpireDate();
     }
 
 

@@ -1,0 +1,33 @@
+﻿@using Blazored.LocalStorage
+@using Models
+
+@* Shared/ProductCard.razor *@
+<div class="product-card " >
+    @if (!string.IsNullOrEmpty(product.thumbnail))
+    {
+        <img src="@product.thumbnail" alt="@product.item_name" class="product-image" style="cursor: pointer;" @onclick="OnlickAction" />
+    }
+    else
+    {
+        <img src="images/VDBDefault.jpg" alt="@product.item_name" class="product-image" style="cursor: pointer;" @onclick="OnlickAction" />
+    }
+    <p class="product-sku"> @product.item_name</p>
+ 
+
+</div>
+
+@code {
+    [Parameter]
+    public HighlightProduct product { get; set; }
+
+    [Parameter]
+    public EventCallback<HighlightProduct> OnClick { get; set; }
+
+
+    private async Task OnlickAction()
+    {
+        await OnClick.InvokeAsync(product);
+    }
+
+
+}

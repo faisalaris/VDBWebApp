@@ -11,6 +11,7 @@
 @inject ILocalStorageService LocalStorage
 @inject IJSRuntime JSRuntime
 @inject Services.LoginServices LoginService
+@inject Services.OrderServices OrderService
 
 <WarningModal @ref="warningModal" />
 
@@ -58,6 +59,9 @@
     private bool isLoading = false;
     string user = string.Empty;
 
+    private List<OrderCustomer> orderCustomers = new List<OrderCustomer>();
+    private OrderCustomer selectedOrderCustomers = new();
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,18 +81,44 @@
             if (userData.Count > 0 && userData[0].ContainsKey("username"))
             {
                 string username = userData[0]["username"];
+                string usertype = userData[0]["usertype"];
+                string personid = userData[0]["personid"];
                 if (string.IsNullOrEmpty(username))
                 {
                     warningModal.Show("Login gagal! Periksa kembali username dan password.", "bi bi-exclamation-triangle", 1);
                 }
                 else
                 {
+                    var data = await OrderService.GetListCustToOrder();
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+                    if (usertype != "ADMIN")
+                    {
+                        if (!string.IsNullOrEmpty(data))
+                        {
+                            orderCustomers = JsonSerializer.Deserialize<List<OrderCustomer>>(data, options) ?? new List<OrderCustomer>();
+                            selectedOrderCustomers = orderCustomers.FirstOrDefault(s => s.PersonId == personid);
+                            await LocalStorage.SetItemAsync("customerData", selectedOrderCustomers);
+                        }
+                    }
+
                     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "user", login);
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "personid", personid);
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "selectedOrderCustomerId", personid);
                     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "userid", loginModel.Username);
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "usertype", usertype);
                     Console.WriteLine(userData[0]["personid"]);
 
                     await Task.Delay(2000); // Tunda sebelum pindah halaman
-                    Navigation.NavigateTo("/home", forceLoad: true);
+                    if (usertype != "ADMIN")
+                    {
+                        Navigation.NavigateTo("/producthome", forceLoad: true);
+                    }
+                    else
+                    {
+                        Navigation.NavigateTo("/home", forceLoad: true);
+                    }
+                    
                     isLoading = false;
                     warningModal.Show("Login sukses! Selamat datang.", "bi bi-check-circle", 0);
                 }

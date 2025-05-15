@@ -1,0 +1,91 @@
+﻿@using Blazored.LocalStorage
+@using Models
+
+@* Shared/ProductCard.razor *@
+<div class="product-card">
+    @if (!string.IsNullOrEmpty(product.thumbnail))
+    {
+        <img src="@product.thumbnail" alt="@product.item_name" class="product-image" style="cursor: pointer;" @onclick="OnlickAction" />
+    }
+    else
+    {
+        <img src="images/VDBDefault.jpg" alt="@product.item_name" class="product-image" style="cursor: pointer;" @onclick="OnlickAction" />
+    }
+    <p class="product-sku">SKU: @product.item_code</p>
+    <h4 class="product-title">@product.item_name</h4>
+    <p class="product-price">Rp @product.item_price</p>
+
+    <div class="d-flex justify-content-center">
+        <img src="images/material/cart.png"
+             alt="Checkout"
+             class="me-5"
+             title="cart"
+             style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+             @onclick="CheckOutAction" />
+
+        @if(product.isWishlist=="0")
+        {
+        <img src="images/material/wishlist_nofill.png"
+             alt="Wishlist"
+             title="Wishlist"
+             style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+            @onclick="WishAction" />
+        }
+        else
+        {
+            <img src="images/material/wishlist_fill.png"
+                 alt="Wishlist"
+                 title="Wishlist"
+                 style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+                 @onclick="WishActionDelete" />
+        }
+    </div>
+
+
+</div>
+
+@code {
+    [Parameter]
+    public Product product { get; set; }
+
+    [Parameter]
+    public EventCallback<Product> OnCartClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<Product> OnWishClicked { get; set; }
+
+
+    [Parameter]
+    public EventCallback<Product> OnWishUnClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<Product> Onclicked { get; set; }
+
+    [Inject]
+    public ILocalStorageService LocalStorage { get; set; }
+
+    [Inject]
+    public NavigationManager NavigationManager { get; set; }
+
+    private async Task CheckOutAction()
+    {
+        await OnCartClicked.InvokeAsync(product);
+    }
+
+    private async Task WishAction()
+    {
+        await OnWishClicked.InvokeAsync(product);
+    }
+
+    private async Task WishActionDelete()
+    {
+        await OnWishUnClicked.InvokeAsync(product);
+    }
+
+    private async Task OnlickAction()
+    {
+        await Onclicked.InvokeAsync(product);
+    }
+
+
+}

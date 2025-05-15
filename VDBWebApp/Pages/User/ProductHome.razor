@@ -1,0 +1,339 @@
+﻿@page "/producthome"
+
+@using System.ComponentModel.DataAnnotations
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using Models
+@using VDBWebApp.Pages.Transaction.Order.Order_Component
+
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
+@inject Services.ProductServices ProductService
+@inject Services.UserServices UserService
+@inject Services.GensetServices GensetService
+@inject HttpClient Http
+
+<div class="container">
+    @* Search Bar *@
+    <input type="text"
+           placeholder="Search product..."
+           value="@search"
+           @oninput="HandleSearch"
+           maxlength="50"
+           class="product-search-input" />
+
+    @*Product Banner*@
+ @if(string.IsNullOrEmpty(search))
+  {
+    @if (banners != null && banners.Any())
+    {
+        <div id="bannerCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                @for (int i = 0; i < banners.Count; i++)
+                {
+                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                        <img src="data:image/png;base64,@banners[i].BannerImage"
+                             class="d-block w-100 banner-img"
+                             alt="Banner @(i + 1)" />
+                    </div>
+                }
+            </div>
+
+            <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    }
+
+    @*Product Highlight*@
+    <h1 class="product-page-title">Product Highlight</h1>
+
+    <div class="d-flex justify-content-center my-4">
+        <div class="highlight-card text-center">
+            @if (highlightProducts != null && highlightProducts.Any())
+            {
+                @foreach (var product in highlightProducts)
+                {
+                    <VDBWebApp.Pages.User.UserComponent.ProductUserHighlight_card product="product"
+                                                                         OnClick="HandleClikProdDetail" />
+                }
+            }
+            else if (loading)
+            {
+                <p class="loading-text">Loading products...</p>
+            }
+            else
+            {
+                <p class="no-product-text">No products found! 😞</p>
+            }
+        </div>
+    </div>
+ }
+    <hr/>
+    @* Product Grid *@
+    <div class="product-grid">
+        @if (products != null && products.Any())
+        {
+            @foreach (var product in products)
+            {
+               <VDBWebApp.Pages.User.UserComponent.ProductUser_card product="product"
+                                      OnCartClicked="HandleCartAction"
+                                      OnWishClicked="HandleWishAction"
+                                      OnWishUnClicked="HandleWishActionDelete"
+                                      Onclicked="HandleClikDetail" />
+            }
+        }
+        else if (loading)
+        {
+            <p class="loading-text">Loading products...</p>
+        }
+        else
+        {
+            <p class="no-product-text">No products found! 😞</p>
+        }
+    </div>
+
+    <div id="load-sentinel" style="height: 1px;"></div>
+    @* Loading Indicator *@
+    @if (loading)
+    {
+        <p class="loading-text">Loading more products...</p>
+    }
+</div>
+
+@if (isLoadingWish)
+{
+    <ProgressCart LoadingImageUrl="images/material/wish_gif.gif" />
+}
+
+@if (isLoadingCart)
+{
+    <ProgressCart LoadingImageUrl="images/material/cart_add_gif.gif" />
+}
+
+<ActionModal @ref="SaveConfirmationModal" />
+<WarningModal @ref="warningModal" />
+
+@code {
+    private List<Product> products = new List<Product>();
+    private List<Product> newproducts = new List<Product>();
+    private List<BannerList> banners = new List<BannerList>();
+    private string search = "";
+    private int page = 1;
+    private bool loading = false;
+    private string? errorMessage;
+    private bool hasMore = true;
+    private bool isLoadingWish = false;
+    private bool isLoadingCart= false;
+    private ActionModal? SaveConfirmationModal;
+    private WarningModal warningModal;
+
+
+    private string? user = "";
+
+    private List<HighlightProduct> ActivehighlightProducts = new List<HighlightProduct>();
+    private List<HighlightProduct> highlightProducts = new List<HighlightProduct>();
+
+    private string msgOrder = "Are you sure to Order?";
+    private string msgDelete = "Are you sure to Delete all items?";
+
+    string? usertype;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchProducts();
+        await FetchHighlightProducts();
+        await FetchBannerProduct();
+        user = await LocalStorage.GetItemAsync<string>("userid");
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("observeElement", "#load-sentinel", DotNetObjectReference.Create(this));
+        }
+    }
+
+    private async Task FetchProducts()
+    {
+        loading = true;
+        errorMessage = null; // Reset error message
+
+        try
+        {
+            var listproducts = await ProductService.GetListProducts(page, search);
+
+
+            if (listproducts != null && listproducts.Any())
+            {
+
+                newproducts = JsonSerializer.Deserialize<List<Product>>(listproducts, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Product>();
+
+
+                if (page == 1)
+                {
+                    products = newproducts;
+                }
+                else
+                {
+                    products.AddRange(newproducts);
+                }
+
+            }
+            else
+            {
+                errorMessage = "No products found!";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged(); // Force re-render after loading
+        }
+    }
+
+    private async Task HandleSearch(ChangeEventArgs e)
+    {
+        string value = e.Value?.ToString() ?? "";
+        value = SanitizeInput(value);
+        search = value.Substring(0, Math.Min(value.Length, 50)); // Enforce length limit
+        page = 1; // Reset page on new search
+        await FetchProducts();
+    }
+
+    private async Task FetchHighlightProducts()
+    {
+        var userData = await LocalStorage.GetItemAsync<List<Dictionary<string, string>>>("user");
+        var userid = await LocalStorage.GetItemAsync<string>("userid");
+
+        usertype = userData[0]["usertype"];
+
+        var Data = await ProductService.GetHighlightProduct(usertype, userid);
+        Console.WriteLine(Data);
+
+        if (!string.IsNullOrEmpty(Data))
+        {
+            await Task.Delay(500);
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            highlightProducts = JsonSerializer.Deserialize<List<HighlightProduct>>(Data, options) ?? new();
+
+        }
+
+    }
+
+    private async Task FetchBannerProduct()
+    {
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var userid = await LocalStorage.GetItemAsync<string>("userid");
+        var data = await GensetService.GetBanner(userid);
+
+
+
+        if (!string.IsNullOrEmpty(data))
+        {
+            banners = JsonSerializer.Deserialize<List<BannerList>>(data, options);
+        }
+    }
+
+    private string SanitizeInput(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        return System.Text.RegularExpressions.Regex.Replace(input, @"['"";-]", "").Replace("  ", " ").Trim();
+    }
+
+    [JSInvokable]
+    public async Task LoadMoreProducts()
+    {
+        if (!loading && hasMore)
+        {
+            page++;
+            await FetchProducts();
+        }
+    }
+
+    private async Task HandleCartAction(Product prd)
+    {
+        isLoadingCart = true;
+        await Task.Delay(1000);
+        var data = await UserService.SetUserItemToCart(user, prd.item_id,"1");
+        await Task.Delay(1000);
+        isLoadingCart = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleWishAction(Product prd)
+    {
+        isLoadingWish = true;
+        await Task.Delay(1000);
+        var data = await UserService.SetUserItemToWish(user, prd.item_id);
+        await Task.Delay(1000);
+        isLoadingWish = false;
+        await FetchProducts();
+        StateHasChanged();
+
+    }
+
+    private async Task HandleWishActionDelete(Product prd)
+    {
+        isLoadingWish = true;
+        await Task.Delay(1000);
+        var data = UserService.SetUserSubstractWish(user, prd.item_id);
+        await Task.Delay(1000);
+        isLoadingWish = false;
+        await FetchProducts();
+        StateHasChanged();
+    }
+
+    private async Task HandleClikProdDetail(HighlightProduct prd)
+    {
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "selectedProduct", prd.item_id);
+        Navigation.NavigateTo("/productuserdetail");
+    }
+
+    private async Task HandleClikDetail(Product prd)
+    {
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "selectedProduct", prd.item_id);
+        Navigation.NavigateTo("/productuserdetail");
+    }
+    
+    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null)
+    {
+        var message = string.IsNullOrWhiteSpace(msg)
+            ? "Apakah Anda yakin ingin Menyimpan?"
+            : msg;
+
+        SaveConfirmationModal?.Show(
+            message,                     // gunakan msg atau default
+            "oi oi-warning",             // icon
+            2,                           // level
+            confirmAction,               // EventCallback dinamis
+            "Save",                      // confirm button label
+            true,                        // show cancel
+            "Cancel"                     // cancel button label
+        );
+    }
+}
+
+<style>
+    .banner-img {
+        height: 180px; /* Sesuaikan tinggi */
+        object-fit: fill; /* Crop gambar */
+        border-radius: 10px;
+    }
+
+</style>

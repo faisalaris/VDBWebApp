@@ -48,7 +48,7 @@ namespace VDBWebApp.Services
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPA_GetOrderStatusDetail {personid},'{status}'",
+                    SP = $"exec SPW_GetOrderStatusDetail {personid},'{status}'",
                     ParamSP = new { }
                 };
 

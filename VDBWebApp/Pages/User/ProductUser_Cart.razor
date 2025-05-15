@@ -1,0 +1,344 @@
+﻿@page "/productusercart"
+
+@using System.ComponentModel.DataAnnotations
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using Models
+@using VDBWebApp.Pages.Transaction.Order.Order_Component
+    
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
+@inject Services.ProductServices ProductService
+@inject Services.UserServices UserService
+@inject Services.GensetServices GensetService
+@inject HttpClient Http
+
+<h3 class="text-center mb-4">My Products</h3>
+
+<div class="d-flex justify-content-center mb-3">
+    <button class="btn btn-primary me-4" @onclick="() => ShowCart()">Cart</button>
+    <button class="btn btn-secondary" @onclick="() => ShowWhish()">Wishlist</button>
+</div>
+
+
+@if (isCart)
+{
+  <div class="container">
+    <h5 class="text-center">Cart Items</h5>
+    <div class="product-order-grid">
+        @if (cartItems != null && cartItems.Any())
+        {
+            @foreach (var item in cartItems)
+            {
+                isWishlist = (item.IsWishlist == "1");
+                <Product_order_card_admin orderCustomer="item" 
+                                       type="cart"
+                                       isWhish="isWishlist" 
+                                       OnAddWhishSelected = "HandleWhishSelected"
+                                       OnRemoveWhishSelected ="HandleWhishDeleted"
+                                       OnRemoveCartSelected="HandleCartDeleted"
+                                       OnIncreaseQtyItem="HandleIncreaseQty"
+                                       OnDecreaseQtyItem="HandleDecreaseQty"
+                                       />
+            }
+        }
+        else
+        {
+            <p class="text-muted text-center">Your cart is empty.</p>
+        }
+    </div>
+  </div>
+}
+else if (isWish)
+{
+    <div class="container">
+    <h5 class="text-center">Wishlist Items</h5>
+    <div class="product-order-grid">
+        @if (wishlistItems != null && wishlistItems.Any())
+        {
+            @foreach (var item in wishlistItems)
+            {
+                    <Product_order_card_admin orderCustomer="item"
+                                              type="wish"
+                                              OnAddCartSelected="HandleCartSelected"
+                                              OnRemoveWhishSelected="HandleWhishDeleted" />
+            }
+        }
+        else
+        {
+            <p class="text-muted text-center">Your wishlist is empty.</p>
+        }
+    </div>
+  </div>
+}
+
+<div class="d-flex justify-content-center mb-3">
+    @if(isCart)
+    {
+        <button class="btn btn-outline-danger me-4" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, ActionDeleteCart),msgDelete)">Delete</button>
+    }
+    else if (isWish)
+    {
+        <button class="btn btn-outline-danger me-4" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, ActionDeleteWish),msgDelete)">Delete</button>
+    }
+    <button class="btn btn-outline-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, ActionOrder),msgOrder)">Order</button>
+</div>
+
+@if (isLoadingWish)
+{
+    <ProgressCart LoadingImageUrl="images/material/wish_gif.gif" />
+}
+
+@if (isLoadingCart)
+{
+    <ProgressCart LoadingImageUrl="images/material/cart_add_gif.gif" />
+}
+
+@if (isLoadingDelete)
+{
+    <ProgressCart LoadingImageUrl="images/material/delete_2.gif" />
+}
+
+@if (isLoadingMenu)
+{
+    <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
+}
+
+<ActionModal @ref="SaveConfirmationModal" />
+<WarningModal @ref="warningModal" />
+
+@code {
+    private string activeSection = "cart";
+    private List<OrderListCustomers> cartItems = new();
+    private List<OrderListCustomers> wishlistItems = new();
+    private ActionModal? SaveConfirmationModal;
+    private WarningModal warningModal;
+    private Response response = new();
+
+    private string? user = "";
+    private string? personid = "";
+    private string msgOrder = "Are you sure to Order?";
+    private string msgDelete = "Are you sure to Delete all items?";
+
+    private bool isCart =false;
+    private bool isWishlist = false;
+    private bool isWish = false;
+    private bool isLoadingWish = false;
+    private bool isLoadingCart = false;
+    private bool isLoadingDelete = false;
+    private bool isLoadingMenu = false;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await LocalStorage.GetItemAsync<string>("userid");
+        personid = await LocalStorage.GetItemAsync<string>("personid");
+        await FetchCartData();
+        await FetchWishData();
+        isCart = true;
+
+    }
+
+    private async Task FetchCartData()
+    {
+        var data = await UserService.GetUserItemCart(user);
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        if (!string.IsNullOrEmpty(data))
+        {
+            cartItems = JsonSerializer.Deserialize<List<OrderListCustomers>>(data, options);
+        }
+    }
+
+    private async Task FetchWishData()
+    {
+        var data = await UserService.GetUserItemWhish(user);
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        if (!string.IsNullOrEmpty(data))
+        {
+            wishlistItems = JsonSerializer.Deserialize<List<OrderListCustomers>>(data, options);
+        }
+    }
+
+
+
+
+    private async Task ShowCart()
+    {
+        isCart = true;
+        isWish= false;
+        await FetchCartData();
+
+    }
+
+
+    private async Task ShowWhish()
+    {
+        isWish=true;
+        isCart = false;
+        await FetchWishData();
+    }
+
+    private async Task ActionDeleteCart()
+    {
+
+        string itemlist = "";
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        foreach (var cart in cartItems)
+        {
+            itemlist = itemlist + cart.Item_Id + ";";
+        }
+
+        var data = await UserService.SetDropAllItemCart(user, itemlist);
+
+
+        isLoadingMenu = true;
+        await Task.Delay(1000);
+        isLoadingMenu = false;
+        SaveConfirmationModal?.Show("All cart list has been deleted", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
+        // Tampilkan pesan sukses
+        Console.WriteLine("Update Success");
+        await FetchCartData();
+    }
+
+    private async Task ActionDeleteWish()
+    {
+        string itemlist = ""; 
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        foreach (var wish in wishlistItems)
+        { 
+            itemlist = itemlist + wish.Item_Id + ";";
+        }
+
+        var data = await UserService.SetDropAllItemWish(user, itemlist);
+        isLoadingMenu = true;
+        await Task.Delay(1000);
+        isLoadingMenu = false;
+        SaveConfirmationModal?.Show("All wish list has been deleted", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
+        // Tampilkan pesan sukses
+        Console.WriteLine("Update Success");
+
+        await FetchWishData();
+
+    }
+
+    private async Task ActionOrder()
+    {
+
+        var data = await UserService.SetUserCartToOrder(personid);
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        if (!string.IsNullOrEmpty(data))
+        {
+            response = JsonSerializer.Deserialize<List<Response>>(data, options).FirstOrDefault() ?? new Response();
+
+            if (response.StatusCode == "200")
+            {
+                isLoadingMenu = true;
+                await Task.Delay(1000);
+                isLoadingMenu = false;
+                SaveConfirmationModal?.Show("Temporary Order is Created", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                // Tampilkan pesan sukses
+                Console.WriteLine("Update Success");
+            }
+            else
+            {
+                isLoadingMenu = true;
+                isLoadingMenu = false;
+                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
+                // Tampilkan pesan error
+                Console.WriteLine("Update Failed");
+            }
+        }
+
+    }
+
+    private void NoConfirmation()
+    {
+        
+    }
+
+    private void SuccessConfirmation()
+    {
+        Navigation.NavigateTo("/neworderdetail");
+    }
+
+    private async Task HandleWhishSelected(OrderListCustomers prd)
+    {
+        isLoadingWish = true;
+        await Task.Delay(1000);
+        var data = await UserService.SetUserItemToWish(user,prd.Item_Id);
+        isLoadingWish = false;
+        await Task.Delay(1000);
+        await FetchCartData();
+        StateHasChanged();
+    }
+
+    private async Task HandleWhishDeleted(OrderListCustomers prd)
+    {
+        isLoadingDelete = true;
+        await Task.Delay(1000);
+        var data = await UserService.SetUserSubstractWish(user, prd.Item_Id);
+        isLoadingDelete = false;
+        await Task.Delay(1000);
+        await FetchCartData();
+        await FetchWishData();
+        StateHasChanged();
+    }
+
+    private async Task HandleCartDeleted(OrderListCustomers prd)
+    {
+        isLoadingDelete= true;
+        await Task.Delay(1000);
+        var data = await UserService.SetUserSubstractCart(user, prd.Item_Id, "0");
+        isLoadingDelete = false;
+        await FetchCartData();
+        StateHasChanged();
+    }
+
+    private async Task HandleIncreaseQty(OrderListCustomers prd)
+    {
+
+        var data = await UserService.SetUserItemToCart(user, prd.Item_Id, prd.Qty);
+
+    }
+
+    private async Task HandleDecreaseQty(OrderListCustomers prd)
+    {
+
+        var data = await UserService.SetUserSubstractCart(user, prd.Item_Id, prd.Qty);
+  
+    }
+
+    private async Task HandleCartSelected(OrderListCustomers prd)
+    {
+        isLoadingCart = true;
+        await Task.Delay(1000);
+        var data = await UserService.SetUserItemToCart(user, prd.Item_Id, "1");
+        await Task.Delay(1000);
+        isLoadingCart = false;
+        await FetchCartData();
+        StateHasChanged();
+    }
+
+    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null)
+    {
+        var message = string.IsNullOrWhiteSpace(msg)
+            ? "Apakah Anda yakin ingin Menyimpan?"
+            : msg;
+
+        SaveConfirmationModal?.Show(
+            message,                     // gunakan msg atau default
+            "oi oi-warning",             // icon
+            2,                           // level
+            confirmAction,               // EventCallback dinamis
+            "Save",                      // confirm button label
+            true,                        // show cancel
+            "Cancel"                     // cancel button label
+        );
+    }
+    
+}

@@ -18,6 +18,7 @@ namespace VDBWebApp.Models
         public string? remark { get; set; } = string.Empty;
         public string? starthighlight { get; set; } = string.Empty;
         public string? endhighlight { get; set; } = string.Empty;
+        public string? isWishlist { get; set; } = string.Empty;
         [JsonIgnore]
         public DateTime? startHighlightDate
         {
@@ -31,5 +32,14 @@ namespace VDBWebApp.Models
             get => DateTime.TryParse(endhighlight, out var result) ? result : null;
             set => endhighlight = value?.ToString("yyyy-MM-dd");
         }
+    }
+
+    public class HighlightProduct
+    {
+        public string? item_id { get; set; } = string.Empty;
+        public string? item_name { get; set; } = string.Empty;
+        public string? period { get; set; } = string.Empty;
+        public string? thumbnail { get; set; } = string.Empty;
+        public string? isshow { get; set; } = string.Empty;
     }
 }

@@ -222,6 +222,35 @@ namespace VDBWebApp.Services
                 return null;
             }
         }
+
+        public async Task<string> GetBannerBase64(string userid)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_GetBanner '{userid}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
         public async Task<string> SetBanner(string bannerimage)
         {
             try
