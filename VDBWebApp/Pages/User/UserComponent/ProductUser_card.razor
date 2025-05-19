@@ -3,43 +3,47 @@
 
 @* Shared/ProductCard.razor *@
 <div class="product-card">
+    <div class="product-action-container">
+        <div class="d-flex justify-content-center">
+            <img src="images/material/cart.png"
+                 alt="Checkout"
+                 class="me-5"
+                 title="cart"
+                 style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+                 @onclick="CheckOutAction" />
+
+            @if (product.isWishlist == "0")
+            {
+                <img src="images/material/wishlist_nofill.png"
+                     alt="Wishlist"
+                     title="Wishlist"
+                     style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+                     @onclick="WishAction" />
+            }
+            else
+            {
+                <img src="images/material/wishlist_fill.png"
+                     alt="Wishlist"
+                     title="Wishlist"
+                     style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+                     @onclick="WishActionDelete" />
+            }
+        </div>
+    </div>
     @if (!string.IsNullOrEmpty(product.thumbnail))
     {
-        <img src="@product.thumbnail" alt="@product.item_name" class="product-image" style="cursor: pointer;" @onclick="OnlickAction" />
+        <img src="@product.thumbnail" alt="@product.item_name" class="product-image mt-2" style="cursor: pointer;" @onclick="OnlickAction" />
     }
     else
     {
-        <img src="images/VDBDefault.jpg" alt="@product.item_name" class="product-image" style="cursor: pointer;" @onclick="OnlickAction" />
+        <img src="images/VDBDefault.jpg" alt="@product.item_name" class="product-image mt-2" style="cursor: pointer;" @onclick="OnlickAction" />
     }
     <p class="product-sku">SKU: @product.item_code</p>
     <h4 class="product-title">@product.item_name</h4>
-    <p class="product-price">Rp @product.item_price</p>
+    <p class="product-price">WS Price : Rp @product.item_price</p>
+    <p class="product-price">MSRP : Rp @product.msrp</p>
 
-    <div class="d-flex justify-content-center">
-        <img src="images/material/cart.png"
-             alt="Checkout"
-             class="me-5"
-             title="cart"
-             style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
-             @onclick="CheckOutAction" />
-
-        @if(product.isWishlist=="0")
-        {
-        <img src="images/material/wishlist_nofill.png"
-             alt="Wishlist"
-             title="Wishlist"
-             style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
-            @onclick="WishAction" />
-        }
-        else
-        {
-            <img src="images/material/wishlist_fill.png"
-                 alt="Wishlist"
-                 title="Wishlist"
-                 style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
-                 @onclick="WishActionDelete" />
-        }
-    </div>
+  
 
 
 </div>

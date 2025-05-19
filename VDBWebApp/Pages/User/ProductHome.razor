@@ -16,6 +16,8 @@
 
 <div class="container">
     @* Search Bar *@
+
+    <div class="search-bar-container">
     <input type="text"
            placeholder="Search product..."
            value="@search"
@@ -23,58 +25,54 @@
            maxlength="50"
            class="product-search-input" />
 
+     </div>
+
     @*Product Banner*@
  @if(string.IsNullOrEmpty(search))
   {
     @if (banners != null && banners.Any())
     {
-        <div id="bannerCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                @for (int i = 0; i < banners.Count; i++)
-                {
-                    <div class="carousel-item @(i == 0 ? "active" : "")">
-                        <img src="data:image/png;base64,@banners[i].BannerImage"
-                             class="d-block w-100 banner-img"
-                             alt="Banner @(i + 1)" />
-                    </div>
-                }
-            </div>
+            <div id="bannerCarousel" class="carousel slide mb-4" data-bs-ride="carousel" data-bs-interval="3000">
+                <div class="carousel-inner">
+                    @for (int i = 0; i < banners.Count; i++)
+                    {
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <img src="data:image/png;base64,@banners[i].BannerImage"
+                                 class="d-block w-100 banner-img"
+                                 alt="Banner @(i + 1)" />
+                        </div>
+                    }
+                </div>
 
-            <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
-        </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button id="autoNextBtn" class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
     }
 
     @*Product Highlight*@
+
+    @if ((highlightProducts != null && highlightProducts.Any()))
+    {
     <h1 class="product-page-title">Product Highlight</h1>
 
     <div class="d-flex justify-content-center my-4">
         <div class="highlight-card text-center">
-            @if (highlightProducts != null && highlightProducts.Any())
-            {
+            
                 @foreach (var product in highlightProducts)
                 {
                     <VDBWebApp.Pages.User.UserComponent.ProductUserHighlight_card product="product"
                                                                          OnClick="HandleClikProdDetail" />
                 }
-            }
-            else if (loading)
-            {
-                <p class="loading-text">Loading products...</p>
-            }
-            else
-            {
-                <p class="no-product-text">No products found! 😞</p>
-            }
         </div>
     </div>
- }
+    }
+ }  
     <hr/>
     @* Product Grid *@
     <div class="product-grid">
@@ -99,7 +97,7 @@
         }
     </div>
 
-    <div id="load-sentinel" style="height: 1px;"></div>
+    <div id="load-sentinel" style="height: 200px;"></div>
     @* Loading Indicator *@
     @if (loading)
     {
@@ -148,10 +146,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        user = await LocalStorage.GetItemAsync<string>("userid");
+
         await FetchProducts();
         await FetchHighlightProducts();
         await FetchBannerProduct();
-        user = await LocalStorage.GetItemAsync<string>("userid");
+
 
     }
 
@@ -160,6 +160,7 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("observeElement", "#load-sentinel", DotNetObjectReference.Create(this));
+            await JSRuntime.InvokeVoidAsync("autoClickCarouselNextProdHome");
         }
     }
 
@@ -170,9 +171,9 @@
 
         try
         {
-            var listproducts = await ProductService.GetListProducts(page, search);
+            var listproducts = await ProductService.GetListProductsUser(page, search, user);
 
-
+            
             if (listproducts != null && listproducts.Any())
             {
 
@@ -213,6 +214,8 @@
         search = value.Substring(0, Math.Min(value.Length, 50)); // Enforce length limit
         page = 1; // Reset page on new search
         await FetchProducts();
+        await JSRuntime.InvokeVoidAsync("scrollToTop");
+        hasMore = true;
     }
 
     private async Task FetchHighlightProducts()
@@ -223,7 +226,7 @@
         usertype = userData[0]["usertype"];
 
         var Data = await ProductService.GetHighlightProduct(usertype, userid);
-        Console.WriteLine(Data);
+       
 
         if (!string.IsNullOrEmpty(Data))
         {
@@ -269,19 +272,20 @@
     private async Task HandleCartAction(Product prd)
     {
         isLoadingCart = true;
-        await Task.Delay(1000);
+        await Task.Delay(500);
         var data = await UserService.SetUserItemToCart(user, prd.item_id,"1");
-        await Task.Delay(1000);
+        await Task.Delay(500);
         isLoadingCart = false;
         StateHasChanged();
     }
 
     private async Task HandleWishAction(Product prd)
     {
+
         isLoadingWish = true;
-        await Task.Delay(1000);
+        await Task.Delay(500);
         var data = await UserService.SetUserItemToWish(user, prd.item_id);
-        await Task.Delay(1000);
+        await Task.Delay(500);
         isLoadingWish = false;
         await FetchProducts();
         StateHasChanged();
@@ -290,10 +294,12 @@
 
     private async Task HandleWishActionDelete(Product prd)
     {
+
+    
         isLoadingWish = true;
-        await Task.Delay(1000);
+        await Task.Delay(500);
         var data = UserService.SetUserSubstractWish(user, prd.item_id);
-        await Task.Delay(1000);
+        await Task.Delay(500);
         isLoadingWish = false;
         await FetchProducts();
         StateHasChanged();

@@ -1,0 +1,212 @@
+﻿@page "/orderhistory"
+
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.ComponentModel.DataAnnotations
+
+@inject NavigationManager Navigation
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.OrderServices OrderService
+
+<div class="dashboard-container mb-5">
+    <div class="text-center dashboard-card-order">
+        <h3 class="text-center mb-4">Transaction History</h3>
+
+        <div class="form-horizontal-container">
+            <div class="form-row">
+                <label for="period">Period</label>
+                <input id="period" type="month" class="form-control" @bind = "Period" placeholder="Choose Month"/>
+            </div>
+
+            <div class="form-row custom-select-wrapper">
+                <label for="status" >Status</label>
+                <select id="status" class="form-control" @bind="status">
+                    <option value="">Select Status</option>
+                    @foreach (var stat in StatusList)
+                    {
+                        <option value="@stat.statusorder">@stat.statusorder</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="keyword">Key word</label>
+                <InputText @bind-Value="keyword" id="keyword" class="form-control" placeholder ="Order No, Product, Customer No" />
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary" @onclick="OnGenerateClick">Generate</button>
+    </div>
+</div>
+
+@if (isGenerated)
+{
+    <VDBWebApp.Pages.Transaction.Order.Order_Component.OrderHistory_Grid ordersHistory="ordersHistory" 
+                                                                         OnEditClicked="HandleClicked"/>
+
+}
+
+
+
+@if (isLoading)
+{
+    <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
+}
+
+@code {
+
+    private string status = "";
+    private string keyword = "";
+    private bool isLoading = false;
+    private bool isGenerated = false;
+    private string personid = "";
+    private List<StatusOrder> StatusList = new();
+    private List<OrderHistoryReport> ordersHistory = new();
+
+    public DateTime Period { get; set; } = DateTime.Today;
+
+
+    public string PeriodFormatted => Period.ToString("yyyy-MM");
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        personid = await LocalStorage.GetItemAsync<string>("personid");
+        var usertype = await LocalStorage.GetItemAsync<string>("usertype");
+
+        if (usertype == "ADMIN")
+        { personid = "0"; }
+
+        StatusList = new List<StatusOrder>
+        {
+            new StatusOrder { statusorder = "NEW" },
+            new StatusOrder { statusorder = "PAYMENT" },
+            new StatusOrder { statusorder = "CANCELED" },
+            new StatusOrder { statusorder = "CLOSED" },
+            new StatusOrder { statusorder = "PROCESS" }
+        };
+
+    }
+
+    private async Task OnGenerateClick()
+    {
+        isLoading = true;
+        var data = await OrderService.GetOrderHistory(personid, PeriodFormatted, status, keyword);
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        if (!string.IsNullOrEmpty(data))
+        {
+            ordersHistory = JsonSerializer.Deserialize<List<OrderHistoryReport>>(data, options);
+        }
+        else
+        {
+            ordersHistory = new List<OrderHistoryReport>();
+        }
+
+       
+        isLoading = false;
+
+        isGenerated = true;
+    }
+
+    private async Task HandleClicked(OrderHistoryReport order)
+    {
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "ordercode", order.OrderCode);
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "orderstatus", order.OrderStatus);
+        await LocalStorage.SetItemAsync("personname", order.personname);
+        await LocalStorage.SetItemAsync("selectedOrderCustomerId", order.personid);
+        await LocalStorage.SetItemAsync("personcategory", order.personcategory);
+        await LocalStorage.SetItemAsync("paymentnote", order.paymentnotename);
+
+        Navigation.NavigateTo("/orderdetailcheck");
+    }
+
+    public class StatusOrder
+    {
+        public string statusorder { get; set; }    
+    }
+
+}
+
+
+<style>
+    .dashboard-container-order {
+        padding: 20px;
+        max-width: 1000px;
+        margin: auto;
+    }
+
+    .dashboard-card-order {
+        background-color: var(--warm-white);
+        color: var(--dark-brown);
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        width: 50%;
+        text-align: left;
+        margin: 0 auto;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--brown);
+    }
+
+    .form-control {
+        border-radius: 6px;
+        border: 1px solid var(--light-brown);
+    }
+
+    h3.text-center {
+        color: var(--dark-brown);
+    }
+
+    .form-horizontal-container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .form-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+        .form-row label {
+            width: 120px; /* atur agar rata */
+            font-weight: 500;
+            margin-right: 10px;
+        }
+
+        .form-row .form-control {
+            flex: 1;
+        }
+
+    .custom-select-wrapper {
+        position: relative;
+    }
+
+        .custom-select-wrapper select {
+            appearance: none; /* Remove native arrow */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 30px; /* Space for the icon */
+        }
+
+        .custom-select-wrapper::after {
+            content: "▼";
+            font-size: 12px;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--dark-brown); /* Atur warna sesuai tema */
+        }
+</style>
+

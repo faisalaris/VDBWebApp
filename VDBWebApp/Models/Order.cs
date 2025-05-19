@@ -110,4 +110,20 @@ public class Order
         }
     }
 
+    public class OrderHistoryReport
+    {
+        public string OrderCode { get; set; }
+        public string OrderDate { get; set; }
+        public string Duration { get; set; }
+        public string OrderStatus { get; set; }
+        public string OrderDesc { get; set; }
+        public string OrderAmount { get; set; }
+        public string CustStore { get; set; }
+        public string? paymentnotename { get; set; }
+        public string? personid { get; set; }
+        public string? personcategory { get; set; }
+        public string? personname { get; set; }
+    }
+
+
 }

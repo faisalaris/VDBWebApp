@@ -23,36 +23,36 @@
                    value="@search"
                    @oninput="HandleSearch"
                    maxlength="50"
-                   class="product-search-input" />
+                   class="product-search-input mb-3" />
 
-            @* Product Grid *@
-            <div class="product-grid">
-                @if (products != null && products.Any())
-                {
-                    @foreach (var product in products)
+            <div class="modal-scrollable-body" @ref="scrollContainer">
+                <div class="product-grid">
+                    @if (products != null && products.Any())
                     {
-                         <Product_Checkout_Card product="product"
-                                                OnCartClicked="HandleCartAction"/>
+                        @foreach (var product in products)
+                        {
+                            <Product_Checkout_Card product="product" OnCartClicked="HandleCartAction" />
+                        }
                     }
-                }
-                else if (loading)
+                    else if (loading)
+                    {
+                        <p class="loading-text">Loading products...</p>
+                    }
+                    else
+                    {
+                        <p class="no-product-text">No products found! 😞</p>
+                    }
+                </div>
+
+                <div id="load-sentinel" style="height: 300px;"></div>
+
+                @if (loading)
                 {
-                    <p class="loading-text">Loading products...</p>
-                }
-                else
-                {
-                    <p class="no-product-text">No products found! 😞</p>
+                    <p class="loading-text">Loading more products...</p>
                 }
             </div>
-
-            <div id="load-sentinel" style="height: 1px;"></div>
-            @* Loading Indicator *@
-            @if (loading)
-            {
-                <p class="loading-text">Loading more products...</p>
-            }
-
         </div>
+
     </div>
 </div>
 
@@ -73,6 +73,8 @@
     private string? errorMessage;
     private bool hasMore = true;
     private Product selectedCart = new();
+
+    private ElementReference scrollContainer;
 
     private async Task CloseModal()
     {
@@ -149,6 +151,8 @@
         search = value.Substring(0, Math.Min(value.Length, 50)); // Enforce length limit
         page = 1; // Reset page on new search
         await FetchProducts();
+        await JSRuntime.InvokeVoidAsync("scrollToTopModal", scrollContainer);
+        hasMore = true;
     }
 
     private string SanitizeInput(string input)
@@ -168,3 +172,18 @@
     }
 
 }
+<style>
+    .modal-scrollable-body {
+        max-height: 60vh; /* Sesuaikan tinggi maksimal area scroll */
+        overflow-y: auto;
+        padding-right: 10px; /* agar scroll bar tidak nutup konten */
+    }
+
+    .modal-header,
+    .product-search-input {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        z-index: 2;
+    }
+ </style>

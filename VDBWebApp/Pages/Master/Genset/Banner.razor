@@ -88,7 +88,7 @@
 
         await Task.Delay(500);
         isLoading = false;
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi - check - circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
 
     }
 

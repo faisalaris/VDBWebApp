@@ -107,7 +107,7 @@
                     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "selectedOrderCustomerId", personid);
                     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "userid", loginModel.Username);
                     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "usertype", usertype);
-                    Console.WriteLine(userData[0]["personid"]);
+         
 
                     await Task.Delay(2000); // Tunda sebelum pindah halaman
                     if (usertype != "ADMIN")

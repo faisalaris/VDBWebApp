@@ -13,8 +13,10 @@
 @inject IJSRuntime JSRuntime
 
 <div class="container">
+
     @* Search Bar *@
     <h1 class="product-page-title">Customers List</h1>
+    <div class="search-bar-container">
     <input
         type="text"
         placeholder="Search Customer..."
@@ -23,7 +25,8 @@
         maxlength="50"
         class="product-search-input" 
      />
-    <div class="customer-actions">
+     </div>
+    <div class="customer-actions mt-2">
         <button class="btn btn-primary add-customer-button" @onclick="AddCustomer">
             <img src="images/material/addmember.png" alt="Add Customer" class="add-icon" />
             Add Customer
@@ -62,16 +65,12 @@
         {
             var listcustomers = await CustomerService.GetCustomers(search);
 
-            Console.WriteLine(listcustomers);
-
+            
             if (listcustomers != null && listcustomers.Any())
             {
                 customers = JsonSerializer.Deserialize<List<Customer>>(listcustomers, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Customer>();
                 
-                foreach (var customer in customers)
-                {
-                    Console.WriteLine($"Customer ID: {customer.PersonId}, Name: {customer.PersonName}");
-                }
+                
             }
             else
             {
@@ -102,6 +101,7 @@
         search = value.Substring(0, Math.Min(value.Length, 50)); // Enforce length limit
         page = 1; // Reset page on new search
         await FetchCustomers();
+        await JSRuntime.InvokeVoidAsync("scrollToTop");
     }
 
     private string SanitizeInput(string input)

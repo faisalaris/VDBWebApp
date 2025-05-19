@@ -15,12 +15,15 @@
 <div class="container">
     @* Search Bar *@
     <h1 class="product-page-title">Product Price List</h1>
-    <input type="text"
-           placeholder="Search product..."
-           value="@search"
-           @oninput="HandleSearch"
-           maxlength="50"
-           class="product-search-input" />
+
+    <div class="search-bar-container">
+        <input type="text"
+               placeholder="Search product..."
+               value="@search"
+               @oninput="HandleSearch"
+               maxlength="50"
+               class="product-search-input" />
+    </div>
 
     @* Product Grid *@
     <div class="product-grid">
@@ -28,7 +31,8 @@
         {
             @foreach (var product in products)
             {
-                <ProductCard ItemCode="@product.item_code"
+                <ProductCard product="@product"
+                             ItemCode="@product.item_code"
                              ItemName="@product.item_name"
                              Thumbnail="@product.thumbnail"
                              Price="@product.item_price"
@@ -46,7 +50,7 @@
         }
     </div>
 
-    <div id="load-sentinel" style="height: 1px;"></div>
+    <div id="load-sentinel" style="height: 1px; min-height:300px;"></div>
 
     @* Loading Indicator *@
     @if (loading)
@@ -125,6 +129,8 @@
         search = value.Substring(0, Math.Min(value.Length, 50)); // Enforce length limit
         page = 1; // Reset page on new search
         await FetchProducts();
+        await JSRuntime.InvokeVoidAsync("scrollToTop");
+        hasMore = true;
     }
 
     private string SanitizeInput(string input)

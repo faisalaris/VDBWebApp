@@ -31,14 +31,27 @@
             </div>
             <div class="col-md-8">
                     <div class="mb-3">
-                        <label for="item_code" class="form-label">Item Code</label>
+                        <label for="item_code" class="form-label">SKU</label>
                         <InputText id="item_code" class="form-control" @bind-Value="product.item_code" readonly />
                     </div>
                     <div class="mb-3">
-                        <label for="item_name" class="form-label">Item Name</label>
+                        <label for="item_name" class="form-label">Product Name</label>
                         <InputText id="item_name" class="form-control" @bind-Value="product.item_name" readonly />
                     </div>
-
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="item_name" class="form-label">Price</label>
+                            <InputText id="item_name" class="form-control" @bind-Value="product.item_price" readonly />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="item_name" class="form-label">MSRP</label>
+                            <InputText id="item_name" class="form-control" @bind-Value="product.msrp" readonly />
+                        </div>
+                    </div>
+                </div>
                 <EditForm Model="@categoryPrices" OnValidSubmit="@ShowSaveConfirmation">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
@@ -47,13 +60,15 @@
                     {
                         @foreach (var price in categoryPrices)
                         {
-                            <div class="mb-3" key="@price.cat_code">
-                                <label for="@("item_price_" + price.cat_code)" class="form-label">@price.cat_name</label>
-                                <InputNumber id="@($"item_price_{price.cat_code}")"
-                                             class="form-control"
-                                             @bind-Value="price.item_price_number"
-                                             TValue="int?" />
-                            </div>
+                                <div class="mb-3" key="@price.cat_code">
+                                    <label for="@("item_price_" + price.cat_code)" class="form-label">@price.cat_name</label>
+                                    <InputNumber id="@($"item_price_{price.cat_code}")"
+                                                 class="form-control"
+                                                 @bind-Value="price.item_price_number"
+                                                 TValue="int?" />
+                                </div>
+
+
                         }
                         
                     }
@@ -87,7 +102,7 @@ else
     private string? errorMessage;
     int numericPrice; // Variabel untuk menyimpan nilai numerik sementara
 
-
+    string msrp = "MSRP ";
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,7 +110,6 @@ else
         var Data = await ProductService.GetPriceProduct(itemId ?? "");
         var DataPrd = await ProductService.GetProduct(itemId ?? "");
 
-        Console.WriteLine(Data);
 
         if (!string.IsNullOrEmpty(DataPrd))
         {
@@ -129,17 +143,16 @@ else
             var Data = await ProductService.SavePriceProduct(itemId, cat.cat_code, cat.item_price);
         }
 
-        Console.WriteLine(JsonSerializer.Serialize(categoryPrices));
         await Task.Delay(1000);
         isLoading = false;
 
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        SaveConfirmationModal?.Show("Data saved successfully.", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
     }
 
 
     private void ShowSaveConfirmation()
     {
-        SaveConfirmationModal?.Show("Apakah Anda yakin ingin Menyimpan?", "oi oi-warning", 2, EventCallback.Factory.Create(this, SaveProduct), "Save", true, "Cancel");
+        SaveConfirmationModal?.Show("Do you want to save the changes?", "oi oi-warning", 2, EventCallback.Factory.Create(this, SaveProduct), "Yes", true, "No");
     }
 
     private void SuccessConfirmation()

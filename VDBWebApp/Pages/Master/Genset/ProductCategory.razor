@@ -51,7 +51,6 @@
                     <div class="modal-body">
                         <EditForm Model="@selectedGenset" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveEditGenset))">
                             <DataAnnotationsValidator />
-                            <ValidationSummary />
                             <div class="mb-3">
                                 <label for="GCode" class="form-label">Code</label>
                                 <InputText id="GCode" class="form-control" @bind-Value="selectedGenset.GCode" readonly placeholder="Input Code" />
@@ -65,7 +64,6 @@
                             <div class="mb-3">
                                 <label for="Thumbnail" class="form-label">Thumbnail</label>
                                 <InputText id="Thumbnail" class="form-control" @bind-Value="selectedGenset.Thumbnail" placeholder="Input Thumbnail" />
-                                <ValidationMessage For="@(() => selectedGenset.Gname)" />
                             </div>
                             <div class="mb-3">
                                 <label for="GimageUpload" class="form-label">Upload Image</label>
@@ -109,7 +107,6 @@
                     <div class="modal-body">
                         <EditForm Model="@newGenset" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveAddGenset))">
                             <DataAnnotationsValidator />
-                            <ValidationSummary />
                             <div class="mb-3">
                                 <label for="GCode" class="form-label">Code</label>
                                 <InputText id="GCode" class="form-control" @bind-Value="newGenset.GCode" placeholder="Input Code" />
@@ -123,7 +120,6 @@
                             <div class="mb-3">
                                 <label for="Thumbnail" class="form-label">Thumbnail</label>
                                 <InputText id="Thumbnail" class="form-control" @bind-Value="newGenset.Thumbnail" placeholder="Input Thumbnail" />
-                                <ValidationMessage For="@(() => newGenset.Gname)" />
                             </div>
                             <div class="mb-3">
                                 <label for="GimageUpload" class="form-label">Upload Image</label>
@@ -140,7 +136,7 @@
                                        @bind="IsActiveBoolAdd" />
 
                                 <label class="form-check-label" for="isActiveCheck">
-                                    Is Active
+                                    Active
                                 </label>
                             </div>
 
@@ -190,10 +186,7 @@
         {
             Gensets = JsonSerializer.Deserialize<List<Genset>>(data, options);
 
-            foreach (var genset in Gensets)
-            {
-                Console.WriteLine(genset.Gname);
-            }
+            
             newGenset.Isactive = "true";
         }
     }
@@ -208,17 +201,26 @@
     {
         showAddModal = true;
     }
-
-    private async Task ShowSaveConfirmation(EventCallback confirmAction)
+    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null, string? msgYes = null, string? msgNo = null)
     {
+        var message = string.IsNullOrWhiteSpace(msg)
+            ? "Do you want to save the changes?"
+            : msg;
+        var messageYes = string.IsNullOrWhiteSpace(msgYes)
+            ? "Yes"
+            : msgYes;
+        var messageNo = string.IsNullOrWhiteSpace(msgNo)
+        ? "No"
+        : msgNo;
+
         SaveConfirmationModal?.Show(
-            "Apakah Anda yakin ingin Menyimpan?",    // message
-            "oi oi-warning",                         // icon
-            2,                                       // level
-            confirmAction,                           // EventCallback dinamis
-            "Save",                                  // confirm button label
-            true,                                    // show cancel
-            "Cancel"                                 // cancel button label
+            message,                     // gunakan msg atau default
+            "oi oi-warning",             // icon
+            2,                           // level
+            confirmAction,               // EventCallback dinamis
+            messageYes,                  // confirm button label
+            true,                        // show cancel
+            messageNo                     // cancel button label
         );
     }
 
@@ -253,7 +255,7 @@
 
         await Task.Delay(500);
         isLoading = false;
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
 
     }
 
@@ -266,7 +268,7 @@
 
         await Task.Delay(500);
         isLoading = false;
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
 
     }
 

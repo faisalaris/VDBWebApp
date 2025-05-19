@@ -18,38 +18,54 @@
             <div class="modal-body">
                 <div class="mb-3">
                     <label for="provinsiSearch" class="form-label">Provinsi</label>
+                    <div class="input-group mb-1">
                     <input type="text" class="form-control" id="provinsiSearch"
                            value="@selectedProvinsi"
                            readonly
-                           @onclick="ShowProvinsiModal"
                            placeholder="Klik untuk pilih provinsi" />
+                        <button class="btn btn-outline-secondary" @onclick="ShowProvinsiModal" type="button" title="Find Province">
+                            <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
+                        </button>
+                    </div>
                 </div>
 
                 <div class="mb-3">
                     <label for="kotaKabupatenSearch" class="form-label">Kota/Kabupaten</label>
+                    <div class="input-group mb-1">
                     <input type="text" class="form-control" id="kotaKabupatenSearch"
                            value="@selectedCity"
                            readonly
-                           @onclick="ShowCityModal"
                            placeholder="Search Kota/Kabupaten" />
+                        <button class="btn btn-outline-secondary" @onclick="ShowCityModal" type="button" title="Find City">
+                            <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
+                        </button>
+                    </div>
                 </div>
 
                 <div class="mb-3">
                     <label for="kecamatanSearch" class="form-label">Kecamatan</label>
+                    <div class="input-group mb-1">
                     <input type="text" class="form-control" id="kecamatanSearch"
                            value="@selectedDistrict"
                            readonly
-                           @onclick="ShowDistrictModal"
                            placeholder="Search Kecamatan" />
+                        <button class="btn btn-outline-secondary" @onclick="ShowDistrictModal" type="button" title="Find District">
+                            <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
+                        </button>
+                     </div>
                 </div>
 
                 <div class="mb-3">
                     <label for="kelurahanSearch" class="form-label">Kelurahan</label>
+                    <div class="input-group mb-1">
                     <input type="text" class="form-control" id="kelurahanSearch"
                            value="@selectedVillage"
                            readonly
-                           @onclick="ShowVillageModal"
                            placeholder="Search Kelurahan" />
+                        <button class="btn btn-outline-secondary" @onclick="ShowVillageModal" type="button" title="Find Village">
+                            <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
+                        </button>
+                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -103,7 +119,7 @@
 
 @if (showCityModal)
 {
-    Console.WriteLine(showCityModal);
+
     <div class="modal show d-block" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -249,8 +265,7 @@
     {
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-        Console.WriteLine(AddressCodeSeq);
-
+        
         if (!string.IsNullOrEmpty(AddressCodeSeq))
         {
             var addressAll = await CustomerService.GetAddressAll(AddressCodeSeq);

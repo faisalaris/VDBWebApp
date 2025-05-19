@@ -11,7 +11,14 @@
     --status-process-text: blue; /* Text blue untuk "PROCESS" */
 }
 
-
+.search-bar-container {
+    position: sticky;
+    top: 56px; /* Sesuaikan tinggi .top-row */
+    z-index: 9;
+    background-color: var(--warm-white); /* Atau warna latar container */
+    padding: 10px 0;
+    border-bottom: 1px solid #ccc;
+}
 
 html, body {
     font-family: 'Roboto';
@@ -25,11 +32,7 @@ a, .btn-link {
     color: #0071c1;
 }
 
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}
+
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
@@ -172,9 +175,61 @@ a, .btn-link {
     }
 }
 
+
+
 .fade-in {
     opacity: 0;
     animation: fadeInText 1s forwards;
+}
+
+.custom-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.custom-loading-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.custom-loading-progress {
+    width: 100%;
+    height: 100%;
+}
+
+.custom-loading-bg {
+    fill: none;
+    stroke: #e0e0e0;
+    stroke-width: 8;
+}
+
+.custom-loading-animate {
+    fill: none;
+    stroke: var(--brown); /*atau var(--brown) kalau pakai CSS variable */
+    stroke-width: 8;
+    stroke-dasharray: 280;
+    stroke-dashoffset: 0;
+    animation: dash 1.5s infinite ease-in-out;
+}
+
+
+
+.custom-loading-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: auto;
+    transform: translate(-50%, -50%);
 }
 
 @keyframes fadeIn {
@@ -340,7 +395,7 @@ a, .btn-link {
 
 .user-info {
     position: relative; /* Untuk memposisikan dropdown relatif terhadapnya */
-    display: flex;
+    display: inline-block;
     align-items: center;
 }
 
@@ -356,7 +411,7 @@ a, .btn-link {
     border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 0.25rem;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
-    z-index: 1000; /* Pastikan di atas elemen lain */
+    z-index: 9999; /* Pastikan di atas elemen lain */
     min-width: 150px; /* Lebar minimum menu */
     display: flex;
     flex-direction: column;
@@ -454,7 +509,7 @@ a, .btn-link {
     }
 
     .order-card .order-status {
-        background-color: var(--status-baru); /* Green for "Baru" */
+        background-color: var(--status-baru) !important; /* Green for "Baru" */
         color: var(--warm-white);
         padding: 5px 8px;
         border-radius: 5px;
@@ -464,7 +519,7 @@ a, .btn-link {
 
 
     .order-card .order-status-payment {
-        background-color: var(--dark-brown); /* Green for "Baru" */
+        background-color: orange !important; /* Green for "Baru" */
         color: var(--warm-white);
         padding: 5px 8px;
         border-radius: 5px;
@@ -472,8 +527,24 @@ a, .btn-link {
     }
 
     .order-card .order-status-process {
-        background-color: var(--light-brown); /* Green for "Baru" */
-        color: var(--dark-brown);
+        background-color: var(--warm-white) !important; /*Green for "Baru" */
+        color: blue;
+        padding: 5px 8px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+    }
+
+    .order-card .order-status-canceled {
+        background-color: red !important; /*Green for "Baru" */
+        color: var(--warm-white);
+        padding: 5px 8px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+    }
+
+    .order-card .order-status-closed {
+        background-color: darkblue !important; /*Green for "Baru" */
+        color: var(--warm-white);
         padding: 5px 8px;
         border-radius: 5px;
         font-size: 0.8rem;
@@ -534,7 +605,53 @@ a, .btn-link {
         color: var(--warm-white);
     }
 
+.order-status {
+    background-color: var(--status-baru) !important; /* Green for "Baru" */
+    color: var(--warm-white);
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+}
 
+.order-status-payment {
+    background-color: orange !important; /* Green for "Baru" */
+    color: var(--warm-white);
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+}
+
+.order-status-process {
+    background-color: var(--warm-white) !important; /*Green for "Baru" */
+    color: blue;
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+}
+
+.order-status-canceled {
+    background-color: red !important; /*Green for "Baru" */
+    color: var(--warm-white);
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+}
+
+.order-status-closed {
+    background-color: darkblue !important; /*Green for "Baru" */
+    color: var(--warm-white);
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+}
+
+.order-status-default {
+    background-color: #f0f0f0; /* Contoh background default */
+    color: #333; /* Contoh warna teks default */
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+}
 
 /*********************************************End CSS Untuk Card di Home**************************************************/
 
@@ -554,6 +671,14 @@ a, .btn-link {
     text-align: center;
     font-family: Roboto, sans-serif;
     background-color: var(--warm-white); /* Atau warna latar belakang yang sesuai */
+}
+
+.product-action-container {
+    min-height: 50px; /* pastikan tinggi tetap */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
 }
 
 /* Gaya untuk logo (jika ada) */
@@ -702,9 +827,10 @@ a, .btn-link {
     border-radius: 10px;
     padding: 20px;
     background-color: var(--warm-white);
-    max-width: 150px;
+    max-width: 250px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+
 
 /*************************************************** END CSS untuk Card Product ***********************************************/
 
@@ -792,7 +918,7 @@ a, .btn-link {
 }
 
 .btn-primary {
-    background-color: var(--brown); /* Tombol utama (Save) */
+    background-color: var(--dark-brown); /* Tombol utama (Save) */
     color: var(--warm-white);
     border: none;
     padding: 0.5rem 1rem;
@@ -801,7 +927,8 @@ a, .btn-link {
 }
 
     .btn-primary:hover {
-        background-color: var(--dark-brown);
+        background-color: var(--light-brown);
+        color: var(--dark-brown);
     }
 
 .btn-secondary {
@@ -981,7 +1108,7 @@ table.person-table.table {
     gap: 0.25rem;
     padding: 0.25rem 0.75rem; /* Sesuaikan padding */
     font-size: 0.8rem;
-    background-color: var(--brown); /* Warna tombol */
+    background-color: var(--dark-brown); /* Warna tombol */
     color: var(--warm-white); /* Warna teks tombol */
     border: none;
     border-radius: 0.25rem;
@@ -989,7 +1116,8 @@ table.person-table.table {
 }
 
     .add-customer-button:hover {
-        background-color: var(--dark-brown); /* Warna tombol saat dihover */
+        background-color: var(--light-brown); /* Warna tombol saat dihover */
+        color: var(--dark-brown); /* Warna teks saat dihover */
     }
 
 .add-icon {

@@ -1,0 +1,802 @@
+﻿@page "/userprofile"
+
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.Globalization;
+
+
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.CustomerServices CustomerService
+@inject Services.GensetServices GensetService
+@inject Services.UserServices UserService
+@inject NavigationManager Navigation
+
+<div class="container">
+    <div class="membership-card @GetCardClass(userType)">
+        <img src="images/VDBDefault.jpg" alt="Profile" class="profile-image" />
+        <div class="membership-content">
+            <span class="membership-label">Membership</span>
+            <h5 class="membership-role mt-4">@GetCategoryName(userType)</h5>
+            <span class="membership-label mt-4">@userProfile.StartDate</span>
+        </div>
+    </div>
+
+    <h3>User Profile</h3>
+    <!-- BAGIAN ATAS: Form Edit Customer -->
+        <div class="mb-3">
+            <label for="PersonName" class="form-label">Person Name:</label>
+            <InputText @bind-Value="customeredit.PersonName" class="form-control" />
+
+            <label for="Email" class="form-label mt-2">Email:</label>
+            <InputText @bind-Value="customeredit.Email" class="form-control" />
+
+            <label for="Email" class="form-label mt-2">Phone No:</label>
+            <InputText @bind-Value="customeredit.PhoneNo" class="form-control" />
+
+         </div>
+        <button class="btn btn-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveCustomer))">Save</button>
+    <button class="btn btn-outline-danger" @onclick="ChangePassword">Change Password</button>
+    <hr />
+
+    <!-- BAGIAN TENGAH: Store Grid -->
+    <h4>Stores</h4>
+    <button class="btn btn-primary mb-2" @onclick="AddStore">Add Store</button>
+    <table class="table table-striped table-bordered table-hover person-table">
+        <thead class="table-header">
+            <tr>
+                <th>Actions</th>
+                <th>Store Name</th>
+                <th>Phone</th>
+                <th>Street</th>
+                <th>Is Active?</th>
+                <th>Default</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            @if (customersstore != null && customersstore.Any())
+            {
+                @foreach (var store in customersstore)
+                {
+                    <tr>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary edit-button me-2" @onclick="() => OpenStoreEditModal(store.StoreId)" title="Edit">
+                                <img src="images/material/edit.png" alt="Edit" class="edit-icon" />
+                            </button>
+                            <button class="btn btn-secondary" @onclick="() => SetDefault(store.StoreId)">Set Default</button>
+                        </td>
+                        <td>@store.StoreName</td>
+                        <td>@store.PhoneNo</td>
+                        <td>@store.StreetAddress</td>
+                        <td>@((store.IsActive?.Trim().ToLowerInvariant() == "true" || store.IsActive == "1" || store.IsActive == "y") ? "Yes" : "No")</td>
+                        <td>@((store.IsDefault?.Trim().ToLowerInvariant() == "true" || store.IsDefault == "1" || store.IsDefault == "y") ? "Yes" : "No")</td>
+                        
+                    </tr>
+                }
+
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center">Data tidak tersedia</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <hr />
+    </div>
+
+
+@if (showEditStoreModal)
+{
+    <div class="modal fade show" tabindex="-1" role="dialog" style="display:block;">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Store</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="() => CloseStoreEditModal(selectedStore.StoreId)"></button>
+                </div>
+
+                <div class="modal-body">
+                    <EditForm Model="@selectedStore" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveEditStore))">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label for="StoreName" class="form-label">Store Name</label>
+                            <InputText id="StoreName" class="form-control" @bind-Value="selectedStore.StoreName" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="StorePhone" class="form-label">Store Phone</label>
+                            <InputText id="StorePhone" class="form-control" @bind-Value="selectedStore.PhoneNo" />
+                        </div>
+                        <div class="mb-3">
+                            <input type="hidden" class="form-control" id="AddressCode" value="@selectedStore.AddressCode" readonly @onclick="ShowAddressLookupModal" />
+                            <ValidationMessage For="@(() => selectedStore.AddressCode)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="StreetAddress" class="form-label">Street Address</label>
+                            <InputText id="StreetAddress" class="form-control" @bind-Value="selectedStore.StreetAddress" readonly @onclick="ShowAddressLookupModal" />
+                            <ValidationMessage For="@(() => selectedStore.StreetAddress)" />
+                        </div>
+                        @if (personcategory != "WS")
+                        {
+                            <div class="mb-3">
+                                <label for="CreditLimit" class="form-label">Credit Limit</label>
+                                <InputNumber id="CreditLimit"  hidden class="form-control" readonly @bind-Value="creditstore" />
+                                <ValidationMessage For="@(() => selectedStore.CreditLimit)" />
+                            </div>
+
+                        }
+
+                        <div class="mb-3">
+                            <label for="isactive" class="form-label">Is Active</label>
+                            <InputSelect id="isactive" class="form-select" @bind-Value="selectedStore.IsActive">
+                                <option value="True">Yes</option>
+                                <option value="False">No</option>
+                            </InputSelect>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => CloseStoreEditModal(selectedStore.StoreId)">Cancel</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showAddStoreModal)
+{
+    <div class="modal fade show" tabindex="-1" role="dialog" style="display:block;">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Store</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseStoreAddModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@newStore" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveNewStore))">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+                        <div class="mb-3">
+                            <label for="StoreName" class="form-label">Store Name</label>
+                            <InputText id="StoreName" class="form-control" @bind-Value="newStore.StoreName" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="StorePhone" class="form-label">Store Phone</label>
+                            <InputText id="StorePhone" class="form-control" @bind-Value="newStore.PhoneNo" />
+                        </div>
+                        <div class="mb-3">
+                            <input type="hidden" class="form-control" id="AddressCode" value="@newStore.AddressCode" readonly @onclick="ShowAddressLookupModal" />
+                            <ValidationMessage For="@(() => newStore.AddressCode)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="StreetAddress" class="form-label">Street Address</label>
+                            <InputText id="StreetAddress" class="form-control" @bind-Value="newStore.StreetAddress" readonly @onclick="ShowAddressLookupModal" />
+                            <ValidationMessage For="@(() => newStore.StreetAddress)" />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseStoreAddModal">Cancel</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showChangePassword)
+{
+    <div class="modal fade show" tabindex="-1" role="dialog" style="display:block;">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="ClosePasswrodModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@userPassword" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveChangePassword),msgPassword)">
+                        <DataAnnotationsValidator />
+                        <div class="mb-3">
+                            <label for="OldPwd" class="form-label">Old Password</label>
+                            <InputText id="OldPwd" type="password" class="form-control" @bind-Value="userPassword.OldPassword" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="NewPwd" class="form-label">New Password</label>
+                            <InputText id="NewPwd" type="password" class="form-control" @bind-Value="userPassword.NewPassword" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="ConfirmPwd" class="form-label">Confirm Password</label>
+                            <InputText id="CfnPwd" type="password" class="form-control" @bind-Value="userPassword.ConfirmPassword" />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="ClosePasswrodModal">Cancel</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+}
+
+@if (showAddressModal)
+{
+    <AddressLookupModal OnAddressSelected="HandleAddressSelected"
+                        OnModalClosed="CloseAddressLookupModal"
+                        AddressCodeSeq="@selectedStore.AddressCode"
+                        AddressAlamat="@selectedStore.StreetAddress" />
+}
+
+<ActionModal @ref="SaveConfirmationModal" />
+<WarningModal @ref="warningModal" />
+
+@if (isLoading)
+{
+    <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
+}
+@code {
+
+    private List<Category> custCategories = new List<Category>();
+    private List<Category> payCategories = new List<Category>();
+
+    private CustomerSet customeredit = new();
+    private List<CustomerStore> customersstore = new();
+    private List<CustomerUser> customersuser = new();
+    private CustomerStore selectedStore = new();
+    private CustomerStore newStore = new();
+    private CustomerUser selectedUser = new();
+    private CustomerUser newUser = new();
+    private ActionModal? SaveConfirmationModal;
+    private WarningModal warningModal;
+    private CustomerUserPassword userPassword = new();
+    private CustomerUserProfile userProfile = new();
+
+    private Response response = new();
+
+    private bool isLoading = false;
+
+    private bool showAddStoreModal = false;
+    private bool showEditStoreModal = false;
+    private bool showEditUserModal = false;
+    private bool showAddUserModal = false;
+    private bool showAddressModal = false;
+    private bool isNeverExpire;
+    private bool showChangePassword = false;
+
+    string personid = "";
+    string personcategory;
+    string userType = "";
+    string msgPassword = "Do you want to change Password?";
+    private DateTime? previousExpireDate;
+
+    int credit = 0;
+    int creditstore = 0;
+    int creditnewstore = 0;
+
+    /**************************Initialize*****************************/
+
+    protected override async Task OnInitializedAsync()
+    {
+        userType = await LocalStorage.GetItemAsync<string>("usertype");
+        personid = await LocalStorage.GetItemAsync<string>("personid");
+        userPassword.UserId = await LocalStorage.GetItemAsync<string>("userid");
+
+
+
+     
+
+        newStore.IsDefault = "False";
+        newStore.IsActive = "False";
+        newStore.CreditLimit = "0";
+        newUser.StartDate_DateType = DateTime.Today;
+
+        var data = await CustomerService.GetCustomersdetail(personid);
+        var datastore = await CustomerService.GetCustomerStore(personid);
+        var datacat = await GensetService.GetListCustomerCategory();
+        var datanote = await GensetService.GetListPaymentCategory();
+        var datauser = await CustomerService.GetCustomerUser(personid);
+        var dataprofile = await UserService.GetUserProfile(userPassword.UserId);
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        if (!string.IsNullOrEmpty(data))
+        {
+            customeredit = JsonSerializer.Deserialize<List<CustomerSet>>(data, options)?.FirstOrDefault();
+            credit = int.TryParse(customeredit.CreditLimit?.Replace(",", ""), out var result) ? result : 0;
+            personcategory = customeredit.PersonCategory;
+        }
+
+        if (!string.IsNullOrEmpty(datacat))
+        {
+            custCategories = JsonSerializer.Deserialize<List<Category>>(datacat, options);
+        }
+
+        if (!string.IsNullOrEmpty(datanote))
+        {
+            payCategories = JsonSerializer.Deserialize<List<Category>>(datanote, options);
+        }
+
+        if (!string.IsNullOrEmpty(datastore))
+        {
+            
+            customersstore = JsonSerializer.Deserialize<List<CustomerStore>>(datastore, options);
+        }
+
+        if (!string.IsNullOrEmpty(datauser))
+        {
+           
+            customersuser = JsonSerializer.Deserialize<List<CustomerUser>>(datauser, options);
+        }
+
+        if (!string.IsNullOrEmpty(dataprofile))
+        {
+
+            userProfile = JsonSerializer.Deserialize<List<CustomerUserProfile>>(dataprofile, options)?.FirstOrDefault() ?? new();
+
+        }
+    }
+
+    /**************************End Initialize**************************************************/
+
+    /********************************Customer Detail Section **********************************/
+    private async Task SaveCustomer()
+    {
+
+        await Task.Delay(1000);
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var data = await UserService.SetUserProfile(customeredit);
+        if (!string.IsNullOrEmpty(data))
+        {
+            response = JsonSerializer.Deserialize<List<Response>>(data, options).FirstOrDefault() ?? new Response();
+
+
+            if (response.StatusCode == "200")
+            {
+                isLoading = true;
+                await Task.Delay(1000);
+                isLoading = false;
+                SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                // Tampilkan pesan sukses
+                
+            }
+            else
+            {
+                isLoading = true;
+                isLoading = false;
+                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
+                // Tampilkan pesan error
+                
+            }
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        showChangePassword = true;   
+    }
+
+    private async Task SaveChangePassword()
+    {
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var data = await UserService.SetUserChangePassword(userPassword);
+        if (!string.IsNullOrEmpty(data))
+        {
+            response = JsonSerializer.Deserialize<List<Response>>(data, options).FirstOrDefault() ?? new Response();
+
+
+            if (response.StatusCode == "200")
+            {
+                isLoading = true;
+                await Task.Delay(1000);
+                isLoading = false;
+                SaveConfirmationModal?.Show("Password successfully changed", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                // Tampilkan pesan sukses
+                
+            }
+            else
+            {
+                isLoading = true;
+                isLoading = false;
+                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
+                // Tampilkan pesan error
+                
+            }
+        }
+
+    }
+
+    /********************************End Customer Detail Section **********************************/
+
+
+
+    /********************************Customer Store  Section **********************************/
+
+    private void CloseStoreEditModal(string storeid)
+    {
+        showEditStoreModal = false;
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+
+    private void AddStore()
+    {
+        showAddStoreModal = true;
+
+    }
+
+    private void CloseStoreAddModal()
+    {
+        showAddStoreModal = false;
+    }
+
+    private void ClosePasswrodModal()
+    {
+        showChangePassword = false;
+    }
+    
+
+    private async Task EditStore(CustomerStore store)
+    {
+        await LocalStorage.SetItemAsync("customerid", personid);
+
+    }
+    private void OpenStoreEditModal(string storeid)
+    {
+        selectedStore = customersstore.FirstOrDefault(s => s.StoreId == storeid);
+        creditstore = int.TryParse(selectedStore.CreditLimit?.Replace(",", ""), out var result) ? result : 0;
+
+        
+
+        showEditStoreModal = true;
+    }
+
+    private void CloseAddressLookupModal()
+    {
+        showAddressModal = false;
+    }
+
+    private async Task SaveEditStore()
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+
+        selectedStore.CreditLimit = creditstore.ToString();
+        var editstore = await CustomerService.SetEditCustomersStore(selectedStore, personid);
+
+        await Task.Delay(500);
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        showEditStoreModal = false;
+    }
+
+    private async Task SaveNewStore()
+    {
+        newStore.CreditLimit = "0";
+        isLoading = true;
+        await Task.Delay(1000);
+
+
+        var addstore = await CustomerService.SetAddCustomersStore(newStore, personid);
+        await Task.Delay(500);
+
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        showAddStoreModal = false;
+
+    }
+
+    private async Task SetDefault(string storeid)
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+        selectedStore = customersstore.FirstOrDefault(s => s.StoreId == storeid);
+        var setdefault = CustomerService.SetDefaultCustomerStore(selectedStore.StoreId, personid);
+        isLoading = false;
+        SaveConfirmationModal?.Show($"Succsessfully set store {selectedStore.StoreName} as default", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+    }
+
+    /******************************** END Customer Store  Section **********************************/
+
+
+    /********************************Customer User  Section **********************************/
+
+    private void OpenUserEditModal(string user)
+    {
+        showEditUserModal = true;
+        selectedUser = customersuser.FirstOrDefault(s => s.UserId == user);
+
+    }
+
+    private void CloseUserEditModal()
+    {
+        showEditUserModal = false;
+    }
+
+    private void CloseUserAddModal()
+    {
+        showAddUserModal = false;
+    }
+
+    private void ToggleNeverExpireDate()
+    {
+        if (isNeverExpire)
+        {
+            // Simpan nilai saat ini sebelum di-null-kan
+            previousExpireDate = selectedUser.UserExpireDate_DateType;
+            selectedUser.UserExpireDate_DateType = null;
+        }
+        else
+        {
+            // Kembalikan nilai sebelumnya
+            selectedUser.UserExpireDate_DateType = previousExpireDate;
+        }
+    }
+
+    private void OnNeverExpireChanged(ChangeEventArgs e)
+    {
+        isNeverExpire = (bool)e.Value;
+        ToggleNeverExpireDate();
+    }
+
+
+    private async Task SaveEditUser()
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+
+        var editUser = await CustomerService.SetEditCustomersUser(selectedUser);
+
+        await Task.Delay(500);
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        showEditStoreModal = false;
+    }
+
+    private async Task SaveAddUser()
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+
+        var addUser = await CustomerService.SetAddCustomersUser(newUser, personid);
+
+        await Task.Delay(500);
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        showAddStoreModal = false;
+    }
+
+    private void AddUser()
+    {
+        showAddUserModal = true;
+    }
+
+    /********************************END Customer User  Section **********************************/
+
+    /******************************** Address  Section **********************************/
+
+    private void HandleAddressSelected(Address selectedAddress)
+    {
+        selectedStore.AddressCode = selectedAddress.AddressCode;
+        selectedStore.StreetAddress = selectedAddress.AlamatLengkap;
+
+        newStore.AddressCode = selectedAddress.AddressCode;
+        newStore.StreetAddress = selectedAddress.AlamatLengkap;
+
+        showAddressModal = false;
+        StateHasChanged();
+    }
+
+    private void ShowAddressLookupModal()
+    {
+        showAddressModal = true;
+    }
+
+    /******************************** END Address  Section **********************************/
+
+    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null)
+    {
+        var message = string.IsNullOrWhiteSpace(msg)
+            ? "Apakah Anda yakin ingin Menyimpan?"
+            : msg;
+
+        SaveConfirmationModal?.Show(
+            message,                     // gunakan msg atau default
+            "oi oi-warning",             // icon
+            2,                           // level
+            confirmAction,               // EventCallback dinamis
+            "Save",                      // confirm button label
+            true,                        // show cancel
+            "Cancel"                     // cancel button label
+        );
+    }
+
+
+    private void SuccessConfirmation()
+    {
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+
+        private void NoConfirmation()
+        {
+            
+        }
+
+
+    private void GoBack()
+    { Navigation.NavigateTo($"/userprofile"); }
+
+    private string GetCardClass(string role)
+    {
+        return role?.ToLower() switch
+        {
+            "admin" => "admin",
+            "dsm" => "dsm",
+            "ws" => "ws",
+            _ => "ws" // fallback
+        };
+    }
+
+    private string GetCategoryName(string role)
+    {
+        return role?.ToLower() switch
+        {
+            "admin" => "Administrator",
+            "dsm" => "Drop Shipper -  Market Place",
+            "ws" => "Whole Sales",
+            "dsd" => "Drop Shipper - Direct",
+            _ => "ws" // fallback
+        };
+    }
+}
+
+<style>
+
+    .table-container {
+        position: relative; /* Untuk memposisikan tombol tambah */
+    }
+
+    .table-header-actions {
+        position: absolute;
+        top: 300;
+        right: 0;
+        z-index: 200; /* Pastikan di atas tabel */
+    }
+
+    .add-button {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .add-icon {
+        width: 16px;
+        height: 16px;
+        vertical-align: middle;
+    }
+
+    table.person-table.table {
+        background-color: var(--brown) !important;
+        color: var(--light-brown) !important;
+    }
+
+        table.person-table.table th {
+            background-color: var(--brown) !important;
+            color: var(--warm-white) !important;
+        }
+
+        table.person-table.table td {
+            background-color: var(--warm-white) !important;
+            color: var(--dark-brown) !important;
+        }
+
+        table.person-table.table tbody tr:hover {
+            background-color: #e6d7c5 !important;
+            color: #000 !important;
+        }
+
+    .edit-button {
+        padding: 0.25rem 0.5rem; /* Lebih kecil padding tombol */
+        border: none;
+        background-color: var(--dark-brown); /* Transparan background */
+        cursor: pointer;
+    }
+
+        .edit-button:hover {
+            background-color: rgba(0, 0, 0, 0.1); /* Sedikit latar belakang saat dihover */
+        }
+
+    .edit-icon {
+        width: 16px; /* Ukuran ikon */
+        height: 16px;
+        vertical-align: middle; /* Pusatkan ikon vertikal */
+    }
+
+    /* Jika Anda ingin agar tombol selalu berada di tengah vertikal sel */
+    .person-table td {
+        vertical-align: middle;
+    }
+
+
+    .profile-image {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .membership-card {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        height: 200px;
+        margin: 20px auto;
+        padding: 30px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        color: var(--dark-brown);
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Vertikal center */
+        align-items: center; /* Horizontal center */
+        text-align: center;
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .membership-card:hover {
+            transform: scale(1.02);
+        }
+
+    .membership-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .membership-role {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .membership-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        opacity: 0.7;
+    }
+
+    /* Warna background berdasarkan usertype */
+    .membership-card.admin {
+        background-color: var(--dark-brown);
+        color: var(--warm-white);
+    }
+
+    .membership-card.dsm {
+        background-color: var(--light-brown);
+        color: var(--dark-brown);
+    }
+
+    .membership-card.ws {
+        background-color: var(--warm-white);
+        color: var(--dark-brown);
+        border: 1px solid var(--light-brown);
+    }
+
+</style>

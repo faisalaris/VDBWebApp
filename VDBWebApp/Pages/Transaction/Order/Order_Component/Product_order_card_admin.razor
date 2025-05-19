@@ -94,9 +94,9 @@
     {
         if (int.TryParse(orderCustomer.Qty, out int qty))
         {
-            Console.WriteLine($"Current qty: {qty}");
+            
             qty++;
-            Console.WriteLine($"After qty: {qty}");
+            
             orderCustomer.Qty = qty.ToString();
         }
 

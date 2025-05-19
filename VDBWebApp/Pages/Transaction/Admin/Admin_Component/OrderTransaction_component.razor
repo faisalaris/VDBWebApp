@@ -20,7 +20,20 @@
     <p class="text-muted mb-4">Payment Note: <strong>@paymentNote</strong></p>
     <hr />
     <h3>Order List</h3>
+    @if (Status?.ToUpper() == "NEW" && usertype == "ADMIN" && OrderCodeId == "")      
+    {
+    <div class="d-flex justify-content-end mb-2 mt-2" style="gap: 10px;">
+        <button class="btn btn-primary" @onclick="OnSearchClik">Add Product</button>
+     </div>
+    }
 
+    else if (Status?.ToUpper() == "NEW" && usertype == "ADMIN" && OrderCodeId != "")
+    {
+        <div class="d-flex justify-content-end mb-2 mt-2" style="gap: 10px;">
+            <button class="btn btn-primary" @onclick="OnSearchClik">Add Product</button>
+        </div>
+    }
+    
     <!-- Display selected products -->
     <div class="product-order-grid">
         @if (orderListCustomers != null && orderListCustomers.Any())
@@ -28,7 +41,7 @@
 
             <VDBWebApp.Pages.Transaction.Order.Order_Component.Product_order_grid productorders="@orderListCustomers"
                                                                                   OnEditClicked="HandleClicked"
-                                                                                  OnDeleteClicked="HandleRemoveItemCart" 
+                                                                                  OnDeleteClicked="HandleConfirmationDelete"
                                                                                   Status="@Status"
                                                                                   UserType="@usertype"
                                                                                   />
@@ -40,30 +53,35 @@
         }
         else
         {
-            <p class="no-product-text">No data found! 😞</p>
+            <VDBWebApp.Pages.Transaction.Order.Order_Component.Product_order_grid productorders="@orderListCustomers"/>
         }
     </div>
     @if (Status?.ToUpper() == "NEW" && usertype == "ADMIN" && OrderCodeId == "")      
     {
         <!-- Button to open modal for selecting products -->
         <div class="d-flex mb-2" style="gap: 10px;">
-            <button class="btn btn-primary" @onclick="OnSearchClik">Add Product</button>
             <button class="btn btn-success" @onclick="(() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnChekOutClick), msgCheckout))">CheckOut</button>
         </div>
     }
     else if (Status?.ToUpper() == "NEW" && usertype == "ADMIN" && OrderCodeId != "")
     {
         <div class="d-flex mb-2" style="gap: 10px;">
-            <button class="btn btn-primary" @onclick="OnSearchClik">Add Product</button>
             <button class="btn btn-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnConfirmClick),msgConfirm)">Confirm Order</button>
             <button class="btn btn-outline-danger" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnCancelClick),msgCancel)">Cancel Order</button>
-            <button class="btn btn-primary" @onclick="OnSearchClik">Delivery Label</button>
+            <button class="btn btn-outline-primary" @onclick="OnSearchClik">Delivery Label</button>
         </div>
     }
     else if (usertype != "ADMIN" && (Status?.ToUpper() == "NEW" || Status?.ToUpper() == "PAYMENT") && OrderCodeId != "")
     {
         <div class="d-flex mb-2" style="gap: 10px;">
             <button class="btn btn-outline-danger" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnCancelClick),msgCancel)">Cancel Order</button>
+        </div>
+    }
+
+    else if (Status?.ToUpper()=="CANCELED" && OrderCodeId != "")
+    {
+        <div class="d-flex mb-2" style="gap: 10px;">
+            <button class="btn btn-outline-danger" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnReplicateClick),msgReplicate)">Replicate Order</button>
         </div>
     }
 
@@ -79,7 +97,7 @@
     else if (usertype?.ToUpper() == "ADMIN" && Status?.ToUpper() == "PROCESS" && OrderCodeId != "")
     {
         <div class="d-flex mb-2" style="gap: 10px;">
-            <button class="btn btn-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnClosedClick),msgClosed)">Close Order</button>
+            <button class="btn btn-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnClosedClick),msgClosed,btnClose1,btnClose2)">Close Order</button>
             <button class="btn btn-outline-primary" @onclick="OnLabelClick">Delivery Label</button>
             <button class="btn btn-outline-success" @onclick="OnInvoiceClick">Invoice</button>
         </div>
@@ -89,6 +107,8 @@
 
     @if (personCategory == "DSM")
     {
+
+
         <div class="order-summary p-3 border rounded">
             <h4 class="text-center">Order Summary</h4>
             <p class="text-center order-status @GetOrderStatusClass(Status) mb-4 ">Status: <strong>@Status</strong></p>
@@ -102,14 +122,36 @@
                     <label class="form-label">Total Quantity</label>
                     <input type="text" class="form-control" readonly @bind="orderSummary.TotalQty" />
                 </div>
+                @if (IsReadOnly)
+                {
+                    orderSummary.Disc = orderSummary.DiscDecimal.ToString("N2");
+                    orderSummary.DeliveryCost = orderSummary.DeliveryCostDecimal.ToString("N2");
+                    <div class="col-md-6">
+                        <label class="form-label">Discount</label>
+                        <input type="text" class=" form-control" readonly="@IsReadOnly"  @bind="orderSummary.Disc" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Delivery Cost</label>
+                        <input type="text" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DeliveryCost" />
+                    </div>
+                }
+                else
+                {
+                   
                 <div class="col-md-6">
                     <label class="form-label">Discount</label>
-                    <input type="number" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DiscDecimal" />
+                    <input type="number" class="form-control" readonly="@IsReadOnly"
+                               step="0.01" min="0"
+                    @bind="orderSummary.DiscDecimal" />
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Delivery Cost</label>
-                    <input type="number" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DeliveryCostDecimal" />
+                    <input type="number" class="form-control"
+                               step="0.01" min="0"
+                    readonly="@IsReadOnly" @bind="orderSummary.DeliveryCostDecimal" />
                 </div>
+                }
+                
                 <div class="col-12">
                     <label class="form-label">Remark</label>
                     <InputTextArea class="form-control" readonly="@IsReadOnly" @bind-Value="orderSummary.Remark" />
@@ -163,6 +205,7 @@
     }
     else
     {
+
         <div class="order-summary p-3 border rounded">
             <h4 class="text-center">Order Summary</h4>
             <p class="text-center order-status @GetOrderStatusClass(Status) mb-4 ">Status: <strong>@Status</strong></p>
@@ -176,13 +219,37 @@
                     <label class="form-label">Total Quantity</label>
                     <input type="text" class="form-control" readonly @bind="orderSummary.TotalQty" />
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Discount</label>
-                    <input type="number" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DiscDecimal" />
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Delivery Cost</label>
-                    <input type="number" class="form-control" readonly="@IsReadOnly" @bind="orderSummary.DeliveryCostDecimal" />
+                @if (IsReadOnly)
+                {
+                    orderSummary.Disc = orderSummary.DiscDecimal.ToString("N2");
+                    orderSummary.DeliveryCost = orderSummary.DeliveryCostDecimal.ToString("N2");
+                    <div class="col-md-6">
+                        <label class="form-label">Discount</label>
+                        <input type="text" class=" form-control" readonly="@IsReadOnly"  @bind="orderSummary.Disc" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Delivery Cost</label>
+                        <input type="text" class="form-control" readonly="@IsReadOnly"  @bind="orderSummary.DeliveryCost" />
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-6">
+                        <label class="form-label">Discount</label>
+                        <input type="number" class="form-control" readonly="@IsReadOnly"
+                               step="0.01" min="0"
+                               @bind="orderSummary.DiscDecimal" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Delivery Cost</label>
+                        <input type="number" class="form-control"
+                               step="0.01" min="0"
+                               readonly="@IsReadOnly" @bind="orderSummary.DeliveryCostDecimal" />
+                    </div>
+                }
+                <div class="col-12">
+                    <label class="form-label">Remark</label>
+                    <InputTextArea class="form-control" readonly="@IsReadOnly" @bind-Value="orderSummary.Remark" />
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Recipient Address</label>
@@ -355,23 +422,23 @@
                     <div class="mb-3">
                         <label for="Remark" class="form-label">Remark</label>
                         <InputTextArea id="Remark" class="form-control" @bind-Value="selectedOrderListCustomer.Remark" />
-                        <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditQty">Save</button>
+                        <button type="button" class="btn btn-success mt-5" data-bs-dismiss="modal" @onclick="SaveEditQty">Save</button>
                     </div>
                     <hr />
                     <div class="mb-3">
                         <label for="DiscPercent" class="form-label">Discount By Percentage (%)</label>
                         <InputNumber id="DiscPercent" class="form-control" @bind-Value="discPercent" />
-                        <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditDiscPercent">Save Percentage</button>
+                        <button type="button" class="btn btn-success mt-5" data-bs-dismiss="modal" @onclick="SaveEditDiscPercent">Save Percentage</button>
                     </div>
                     <hr />
                     <div class="mb-3">
                         <label for="DiscAmount" class="form-label">Discount By Amount</label>
                         <InputNumber id="DiscAmount" class="form-control" @bind-Value="discAmount" />
-                        <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditDiscAmount">Save Amount</button>
+                        <button type="button" class="btn btn-success mt-5" data-bs-dismiss="modal" @onclick="SaveEditDiscAmount">Save Amount</button>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseEditQtyModal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseEditQtyModal">Cancel</button>
                 </div>
             </div>
         </div>
@@ -407,6 +474,10 @@
     private string msgCancel = "Are you sure to cancel this order?";
     private string msgClosed = "Are you sure to close this order?";
     private string msgPayment = "Are you sure to confirm this payment?";
+    private string msgReplicate = "All orders will be copied to a new transaction, and the entire cart list will be cleared. Are you sure you want to proceed?";
+
+    private string btnClose1= "Submit";
+    private string btnClose2 = "Cancel";
 
     private Order orderSummary = new();
 
@@ -453,9 +524,6 @@
     {
         isLoadingMenu = true;
         await FetchData();
-        Console.WriteLine($"Flag : {IsReadOnly}");
-        Console.WriteLine($"Flag : {Status}");
-        Console.WriteLine($"Flag : {usertype}");
         isLoadingMenu = false;
     }
 
@@ -469,10 +537,7 @@
         userid = await LocalStorage.GetItemAsync<string>("userid") ?? "";
 
 
-        if (Status == "NEW")
-        {
-            var dataorder = await OrderService.GetListReplicateTransactionOrderDetail(OrderCodeId,customerpersonid);
-        }
+
 
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var data = await OrderService.GetListTransactionOrderDetail(OrderCodeId);
@@ -480,6 +545,11 @@
 
         var datastore = await CustomerService.GetCustomerStore(customerpersonid);
         var datacourier = await GensetService.GetGenset(gtypepar, "0", "1", "");
+
+        @*if (Status == "NEW")
+        {
+            var dataorder = await OrderService.GetListReplicateTransactionOrderDetail(OrderCodeId, customerpersonid);
+        }*@
 
 
         if (!string.IsNullOrEmpty(data))
@@ -527,7 +597,8 @@
     {
         //var data = OrderService.SetQtyCart(customerpersonid, selectedOrderListCustomer.Item_Id, selectedOrderListCustomer.Qty);
 
-        var data = await OrderService.SetQtyCart(customerpersonid, selectedOrderListCustomer.Item_Id, selectedOrderListCustomer.Qty, selectedOrderListCustomer.Remark);
+        var data = await OrderService.SetQtyOrder(OrderCodeId, selectedOrderListCustomer.Item_Id, selectedOrderListCustomer.Qty, selectedOrderListCustomer.Remark);
+        Console.WriteLine(data);
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         if (!string.IsNullOrEmpty(data))
         {
@@ -537,18 +608,19 @@
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+
+                showEditQty = false;
             }
             else
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+                
             }
         }
 
@@ -558,7 +630,7 @@
     {
         //var data = OrderService.SetQtyCart(customerpersonid, selectedOrderListCustomer.Item_Id, selectedOrderListCustomer.Qty);
 
-        var data = await OrderService.SetDiscPercentageCart(customerpersonid, selectedOrderListCustomer.Item_Id, discPercent.ToString("F2"));
+        var data = await OrderService.SetDiscPercentageOrder(OrderCodeId, selectedOrderListCustomer.Item_Id, discPercent.ToString("F2"));
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         if (!string.IsNullOrEmpty(data))
         {
@@ -568,18 +640,21 @@
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
                 Console.WriteLine("Update Success");
+                discPercent = 0;
+                showEditQty = false;
             }
             else
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+               
+
             }
         }
 
@@ -589,7 +664,7 @@
     {
         //var data = OrderService.SetQtyCart(customerpersonid, selectedOrderListCustomer.Item_Id, selectedOrderListCustomer.Qty);
 
-        var data = await OrderService.SetDiscAmountCart(customerpersonid, selectedOrderListCustomer.Item_Id, discAmount.ToString("F2"));
+        var data = await OrderService.SetDiscAmountOrder(OrderCodeId, selectedOrderListCustomer.Item_Id, discAmount.ToString("F2"));
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         if (!string.IsNullOrEmpty(data))
         {
@@ -599,18 +674,20 @@
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+                
+                discAmount = 0;
+                showEditQty = false;
             }
             else
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+               
             }
         }
     }
@@ -618,6 +695,11 @@
     private void SuccessConfirmation()
     {
         Navigation.NavigateTo("/home");
+    }
+
+    private async Task NoConfirmation()
+    {
+        await FetchData();
     }
 
     private void SuccessConfirmationCheckout()
@@ -632,11 +714,16 @@
         }
     }
 
-
+    private async Task HandleConfirmationDelete(OrderListCustomers orderListCustomer)
+    {
+        ShowSaveConfirmation(
+    EventCallback.Factory.Create(this, async () => await HandleRemoveItemCart(orderListCustomer)),
+    "Are you sure you want to remove this item?");
+    }
 
     private async Task HandleRemoveItemCart(OrderListCustomers orderListCustomer)
     {
-        var data = await OrderService.DeleteItemFromCart(customerpersonid, orderListCustomer.Item_Id);
+        var data = await OrderService.DeleteItemFromOrder(OrderCodeId, orderListCustomer.Item_Id);
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         if (!string.IsNullOrEmpty(data))
         {
@@ -646,9 +733,9 @@
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show("Success, Data has been removed from cart", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show("Success, Data has been removed from list", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+                
             }
             else
             {
@@ -657,7 +744,7 @@
                 SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+                
             }
         }
         await FetchData();
@@ -669,7 +756,7 @@
         selectedOrderListCustomer = orderListCustomer;
         qtyPrev = orderListCustomer.QtyNum;
         showEditQty = true;
-        Console.WriteLine(orderListCustomer.Item_Id);
+        
     }
 
 
@@ -694,9 +781,9 @@
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show("Success inserted to cart", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show("Success inserted to List", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+               
             }
             else
             {
@@ -705,7 +792,7 @@
                 SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+                
             }
         }
         await FetchData();
@@ -760,7 +847,7 @@
                                     prod.Item_Id + ";" + prod.PriceNum.ToString() + ";" +
                                     prod.DiscAmount.ToString("F2") + ";" + prod.QtyNum.ToString("F0") + ";*";
         }
-        
+
         var data = await OrderService.SetOrderInsertSO(customerpersonid, userid, orderSummary);
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
@@ -770,11 +857,14 @@
 
             if (response.StatusCode == "200")
             {
-                isLoadingMenu = true;
-                isLoadingMenu = false;
-                SaveConfirmationModal?.Show($"Success, order created with number : {response.DocNo}", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmationCheckout), "Ok", false);
-                // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+                if (string.IsNullOrEmpty(OrderCodeId))
+                {
+                    isLoadingMenu = true;
+                    isLoadingMenu = false;
+                    SaveConfirmationModal?.Show($"Success, order created with number : {response.DocNo}", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmationCheckout), "Ok", false);
+                    // Tampilkan pesan sukses
+                    
+                } 
             }
             else
             {
@@ -783,7 +873,7 @@
                 SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+                
             }
         }
 
@@ -819,6 +909,14 @@
         var data = await OrderService.SetStatusOrder(OrderCodeId, customerpersonid, "CANCELED");
 
         SaveConfirmationModal?.Show($"Success, Order has been Canceled", "bi bi-exclamation-triangle", 2, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+
+    }
+
+    private async Task OnReplicateClick()
+    {
+        var dataorder = await OrderService.GetListReplicateTransactionOrderDetail(OrderCodeId, customerpersonid);
+
+        SaveConfirmationModal?.Show($"Success, Order has been Replicated", "bi bi-exclamation-triangle", 2, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
 
     }
 
@@ -912,20 +1010,26 @@
         openCourierModal = false;
     }
 
-    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null)
+    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null, string? msgYes = null, string? msgNo = null)
     {
         var message = string.IsNullOrWhiteSpace(msg)
             ? "Apakah Anda yakin ingin Menyimpan?"
             : msg;
+        var messageYes = string.IsNullOrWhiteSpace(msgYes)
+            ? "Yes"
+            : msgYes;
+        var messageNo = string.IsNullOrWhiteSpace(msgNo)
+        ? "No"
+        : msgNo;
 
         SaveConfirmationModal?.Show(
             message,                     // gunakan msg atau default
             "oi oi-warning",             // icon
             2,                           // level
             confirmAction,               // EventCallback dinamis
-            "Save",                      // confirm button label
+            messageYes,                  // confirm button label
             true,                        // show cancel
-            "Cancel"                     // cancel button label
+            messageNo                     // cancel button label
         );
     }
 
@@ -936,44 +1040,11 @@
             "NEW" => "order-status",
             "PAYMENT" => "order-status-payment",
             "PROCESS" => "order-status-process",
+            "CANCELED" => "order-status-canceled",
+            "CLOSED" => "order-status-closed",
             _ => "order-status-default", // Class default jika status tidak dikenali
         };
     }
 
 
 }
-
-<style>
-    .order-status {
-        background-color: var(--status-baru); /* Green for "Baru" */
-        color: var(--warm-white);
-        padding: 5px 8px;
-        border-radius: 5px;
-        font-size: 0.8rem;
-    }
-
-    .order-status-payment {
-        background-color: var(--dark-brown); /* Green for "Baru" */
-        color: var(--warm-white);
-        padding: 5px 8px;
-        border-radius: 5px;
-        font-size: 0.8rem;
-    }
-
-    .order-status-process {
-        background-color: var(--light-brown); /* Green for "Baru" */
-        color: var(--dark-brown);
-        padding: 5px 8px;
-        border-radius: 5px;
-        font-size: 0.8rem;
-    }
-
-    .order-status-default {
-        background-color: #f0f0f0; /* Contoh background default */
-        color: #333; /* Contoh warna teks default */
-        padding: 5px 8px;
-        border-radius: 5px;
-        font-size: 0.8rem;
-    }
-
-</style>

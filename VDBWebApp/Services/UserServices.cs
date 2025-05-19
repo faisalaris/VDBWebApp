@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using VDBWebApp.Models;
 
 namespace VDBWebApp.Services
 {
@@ -72,6 +73,7 @@ namespace VDBWebApp.Services
         {
             try
             {
+                
                 var url = "";
                 var postData = new
                 {
@@ -219,7 +221,7 @@ namespace VDBWebApp.Services
                     ParamSP = new { }
                 };
 
-                Console.WriteLine("SetDropAllItemWish: " + postData.SP);
+
 
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
@@ -265,6 +267,93 @@ namespace VDBWebApp.Services
                 return null;
             }
         }
-        
+
+        public async Task<string> SetUserProfile(CustomerSet user)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_SetEditUserProfileHeader '{user.PersonId}','{user.PersonName}','{user.Email}','{user.PhoneNo}'",
+                    ParamSP = new { }
+                };
+
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> SetUserChangePassword(CustomerUserPassword user)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_SetUserChangePassword '{user.UserId}','{user.OldPassword}','{user.NewPassword}','{user.ConfirmPassword}'",
+                    ParamSP = new { }
+                };
+
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> GetUserProfile(string userid)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPA_GetUserProfile '{userid}'",
+                    ParamSP = new { }
+                };
+
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
     }
 }

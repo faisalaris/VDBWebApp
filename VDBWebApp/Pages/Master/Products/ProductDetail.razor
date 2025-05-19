@@ -35,11 +35,11 @@
                     <ValidationSummary />
 
                     <div class="mb-3">
-                        <label for="item_code" class="form-label">Item Code</label>
+                        <label for="item_code" class="form-label">SKU</label>
                         <InputText id="item_code" class="form-control" @bind-Value="product.item_code" />
                     </div>
                     <div class="mb-3">
-                        <label for="item_name" class="form-label">Item Name</label>
+                        <label for="item_name" class="form-label">Product Name</label>
                         <InputText id="item_name" class="form-control" @bind-Value="product.item_name" />
                     </div>
                     <div class="mb-3">
@@ -47,7 +47,7 @@
                         <InputText id="thumbnail" class="form-control" @bind-Value="product.thumbnail" />
                     </div>
                     <div class="mb-3">
-                        <label for="item_price" class="form-label">Item Price</label>
+                        <label for="item_price" class="form-label">Price</label>
                         <InputNumber id="item_price" class="form-control" @bind-Value="itemPrice" />
                     </div>
                     <div class="mb-3">
@@ -55,18 +55,12 @@
                         <InputNumber id="msrp" class="form-control" @bind-Value="msrp" />
                     </div>
                     <div class="mb-3">
-                        <label for="item_stock" class="form-label">Item Stock</label>
+                        <label for="item_stock" class="form-label">Stock</label>
                         <InputNumber id="item_stock" class="form-control" @bind-Value="itemStock" />
                     </div>
+                   
                     <div class="mb-3">
-                        <label for="isactive" class="form-label">Is Active</label>
-                        <InputSelect id="isactive" class="form-select" @bind-Value="product.isactive">
-                            <option value="True">Aktif</option>
-                            <option value="False">Tidak Aktif</option>
-                        </InputSelect>
-                    </div>
-                    <div class="mb-3">
-                        <label for="brand_name" class="form-label">Brand Name</label>
+                        <label for="brand_name" class="form-label">Brand</label>
                         <InputText id="brand_name" class="form-control" @bind-Value="product.brand_name" />
                     </div>
             
@@ -87,13 +81,24 @@
                         <InputTextArea id="remark" class="form-control" @bind-Value="product.remark" />
                     </div>
                     <div class="mb-3">
-                        <label for="starthighlight" class="form-label">Start Highlight</label>
+                        <label for="starthighlight" class="form-label">Highlight Start Date</label>
                         <InputDate id="starthighlight" class="form-control" @bind-Value="product.startHighlightDate" />
                     </div>
 
                     <div class="mb-3">
-                        <label for="starthighlight" class="form-label">Start Highlight</label>
+                        <label for="starthighlight" class="form-label">Highlight End Date</label>
                         <InputDate id="starthighlight" class="form-control" @bind-Value="product.endHighlightDate" />
+                    </div>
+
+                    <div class="form-check mb-3 mt-1">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               id="isActiveCheck"
+                               @bind="IsActiveBoolAdd" />
+
+                        <label class="form-check-label" for="isActiveCheck">
+                            Active
+                        </label>
                     </div>
 
                     <button type="submit" class="btn btn-primary">Save</button>
@@ -143,6 +148,13 @@ else
         set => product.isactive = value == "True" ? "1" : "0";
     }
 
+    private bool IsActiveBoolAdd
+    {
+        get => product?.isactive?.ToLower() == "true";
+        set => product.isactive = value ? "true" : "false";
+
+    }
+
     protected override async Task OnInitializedAsync()
     {
         var itemId = await LocalStorage.GetItemAsync<string>("selectedProductId");
@@ -187,7 +199,7 @@ else
     {
         if (product.startHighlightDate > product.endHighlightDate)
         {
-            warningModal.Show("Tanggal mulai tidak boleh setelah tanggal akhir", "bi bi-exclamation-triangle", 1);
+            warningModal.Show("Start Highlight Date cannot be after the End Highlight Date.", "bi bi-exclamation-triangle", 1);
             return;
         }
         else
@@ -202,21 +214,19 @@ else
             var Data = await ProductService.SaveProductService(product);
 
             // Implementasikan logika penyimpanan produk di sini (misalnya, call API)
-            Console.WriteLine("Saving product...");
-            Console.WriteLine(JsonSerializer.Serialize(product)); // Log data yang akan disimpan
-
+            
             // Simulasikan penyimpanan
             await Task.Delay(1000);
             isLoading = false;
 
-            SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+            SaveConfirmationModal?.Show("Data saved successfully.", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
         }
     }
 
 
     private void ShowSaveConfirmation()
     {
-        SaveConfirmationModal?.Show("Apakah Anda yakin ingin Menyimpan?", "oi oi-warning", 2, EventCallback.Factory.Create(this, SaveProduct), "Save", true, "Cancel");
+        SaveConfirmationModal?.Show("Do you want to save the changes?", "oi oi-warning", 2, EventCallback.Factory.Create(this, SaveProduct), "Yes", true, "No");
     }
 
     private void SuccessConfirmation()
@@ -253,7 +263,6 @@ else
         {
             product.category_id = e.Value.ToString();
 
-            Console.WriteLine($"Selected Category ID: {product.category_id}");
             // product.category_name = allCategories.FirstOrDefault(c => c.gcode == e.Value.ToString())?.gname;
 
             // Force re-render after category selection

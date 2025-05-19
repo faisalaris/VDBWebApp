@@ -4,6 +4,9 @@
 
 @* Shared/ProductCard.razor *@
 <div class="product-card">
+    <div class="product-action-container">
+        <button class="btn btn-primary product-detail-button mb-5" @onclick="ShowGensetDetail">Edit</button>
+    </div>
     @*@<img src="images/VDBDefault.jpg" alt="@genset.Gname" class="product-image" />*@
     @if (!string.IsNullOrEmpty(genset.Thumbnail))
     {
@@ -29,7 +32,6 @@
         <p class="text-danger">Inactive</p>
     }
 
-    <button class="btn btn-primary product-detail-button" @onclick="ShowGensetDetail">Edit</button>
 </div>
 
 @code {

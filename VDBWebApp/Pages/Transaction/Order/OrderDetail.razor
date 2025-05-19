@@ -15,6 +15,7 @@
 @inject Services.OrderServices OrderService
 @inject Services.CustomerServices CustomerService
 @inject Services.GensetServices GensetService
+@inject Services.UserServices UserService
 @inject NavigationManager Navigation
 
 <div class="container">
@@ -23,7 +24,9 @@
     <p class="text-muted mb-4">Payment Note: <strong>@customer.PaymentNote</strong></p>
     <hr />
     <h3>Order List</h3>
-
+    <div class="d-flex justify-content-end mb-2 mt-2" style="gap: 10px;">
+        <button class="btn btn-primary" @onclick="OnSearchClik">Add Product</button>
+    </div>
     <!-- Display selected products -->
     <div class="product-order-grid">
         @if (orderListCustomers != null && orderListCustomers.Any())
@@ -32,7 +35,7 @@
                 <VDBWebApp.Pages.Transaction.Order.Order_Component.Product_order_grid 
                 productorders="@orderListCustomers" 
                 OnEditClicked ="HandleClicked"
-                OnDeleteClicked="HandleRemoveItemCart"
+                OnDeleteClicked="HandleConfirmationDelete"
                 /> 
 
                 @*
@@ -49,20 +52,24 @@
         }
         else
         {
-            <p class="no-product-text">No data found! 😞</p>
+            <VDBWebApp.Pages.Transaction.Order.Order_Component.Product_order_grid 
+                productorders="@orderListCustomers" />
         }
     </div>
 
     <!-- Button to open modal for selecting products -->
     <div class="d-flex mb-2" style="gap: 10px;">
-        <button class="btn btn-primary" @onclick="OnSearchClik">Add Product</button>
         <button class="btn btn-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, OnChekOutClick),msgCheckout)">CheckOut</button>
+        @if (usertype != "ADMIN")
+        {
+            <button class="btn btn-outline-warning" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, GetItemFromCart),msgCart)">Get Items from Cart</button>
+        }
     </div>
     
     
 
     <hr />
-    @if (customer.PersonCategory == "DSM")
+    @if (customer.PersonCategory == "DSM" || customer.PersonCategory == "DSD")
     {
         <div class="order-summary p-3 border rounded">
             <h4 class="text-center">Order Summary</h4>
@@ -154,6 +161,10 @@
                     <label class="form-label">Total Quantity</label>
                     <input type="text" class="form-control"  readonly @bind="orderSummary.TotalQty" />
                 </div>
+                <div class="col-12">
+                    <label class="form-label">Remark</label>
+                    <InputTextArea class="form-control" @bind-Value="orderSummary.Remark" />
+                </div>
                 @if (usertype == "ADMIN")
                 {
                     <div class="col-md-6">
@@ -166,7 +177,7 @@
                 </div>
                 }
                 <div class="col-md-6">
-                    <label class="form-label">Sender Store Name</label>
+                    <label class="form-label">Recipient Address</label>
                     <div class="input-group mb-1">
                         <input type="text" class="form-control" readonly @bind="selectedStore.StoreName" />
 
@@ -339,9 +350,9 @@
                         <InputNumber id="Quantity" class="form-control" @bind-Value="selectedOrderListCustomer.QtyNum" />
                     </div>
                     <div class="mb-3">
-                        <label for="Remark" class="form-label">Remark</label>
+                        <label for="Remark" class="form-label mt-2">Remark</label>
                         <InputTextArea id="Remark" class="form-control" @bind-Value="selectedOrderListCustomer.Remark" />
-                        <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditQty">Save</button>
+                        <button type="button" class="btn btn-success mt-5" data-bs-dismiss="modal" @onclick="SaveEditQty">Save</button>
                     </div>
                     <hr/>
                     @if (usertype == "ADMIN")
@@ -349,18 +360,18 @@
                         <div class="mb-3">
                             <label for="DiscPercent" class="form-label">Discount By Percentage (%)</label>
                             <InputNumber id="DiscPercent" class="form-control" @bind-Value="discPercent" />
-                            <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditDiscPercent">Save Percentage</button>
+                            <button type="button" class="btn btn-success mt-5" data-bs-dismiss="modal" @onclick="SaveEditDiscPercent">Save Percentage</button>
                         </div>
                         <hr />
                         <div class="mb-3">
                             <label for="DiscAmount" class="form-label">Discount By Amount</label>
                             <InputNumber id="DiscAmount" class="form-control" @bind-Value="discAmount" />
-                            <button type="button" class="btn btn-success mt-1" data-bs-dismiss="modal" @onclick="SaveEditDiscAmount">Save Amount</button>
+                            <button type="button" class="btn btn-success mt-5" data-bs-dismiss="modal" @onclick="SaveEditDiscAmount">Save Amount</button>
                         </div>
                     }
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseEditQtyModal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseEditQtyModal">Cancel</button>
                 </div>
          </div>
      </div>
@@ -375,12 +386,13 @@
     <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
 }
 @code {
-    
+
     private string msgCheckout = "Are you sure to check out?";
     private string msgConfirm = "Are you sure to confirm this order?";
     private string msgCancel = "Are you sure to cancel this order?";
     private string msgClosed = "Are you sure to close this order?";
     private string msgPayment = "Are you sure to confirm this payment?";
+    private string msgCart = "Are you sure you want to retrieve all items from the cart?";
 
     private Order orderSummary = new();
 
@@ -405,6 +417,7 @@
     private bool openCourierModal = false;
     private string customerpersonid = "";
     private string userid = "";
+    private string personid = "";
     private string itemIdCartToRemove = "";
     private string orderid = "";
     private decimal discPercent = 0;
@@ -424,6 +437,7 @@
         userid = await LocalStorage.GetItemAsync<string>("userid") ?? "";
         orderid = await LocalStorage.GetItemAsync<string>("OrderId") ?? "";
         usertype = await LocalStorage.GetItemAsync<string>("usertype") ?? "";
+        personid = await LocalStorage.GetItemAsync<string>("personid") ?? "";
 
         await FetchData();
         isLoadingMenu = false;
@@ -487,7 +501,8 @@
                 isLoadingMenu = false;
                 SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+                
+                showEditQty = false;
             }
             else
             {
@@ -496,7 +511,7 @@
                 SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+               
             }
         }
 
@@ -518,7 +533,9 @@
                 isLoadingMenu = false;
                 SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+               
+                discPercent = 0;
+                showEditQty = false;
             }
             else
             {
@@ -527,7 +544,7 @@
                 SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+                
             }
         }
 
@@ -549,7 +566,9 @@
                 isLoadingMenu = false;
                 SaveConfirmationModal?.Show("Data successfully saved", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+                
+                discAmount = 0;
+                showEditQty = false;
             }
             else
             {
@@ -558,14 +577,14 @@
                 SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+                
             }
         }
     }
 
-    private void SuccessConfirmation()
+    private async Task SuccessConfirmation()
     {
-
+        await FetchData();
     }
 
     private void SuccessConfirmationCheckout()
@@ -580,6 +599,13 @@
         }
     }
 
+    private async Task HandleConfirmationDelete(OrderListCustomers orderListCustomer)
+    {
+        ShowSaveConfirmation(
+    EventCallback.Factory.Create(this, async () => await HandleRemoveItemCart(orderListCustomer)),
+    "Are you sure you want to remove this item?");
+    }
+
     private async Task HandleRemoveItemCart(OrderListCustomers orderListCustomer)
     {
         var data = await OrderService.DeleteItemFromCart(customerpersonid, orderListCustomer.Item_Id);
@@ -592,9 +618,9 @@
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show("Success, Data has been removed from cart", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show("Success, Data has been removed from List", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+                
             }
             else
             {
@@ -603,7 +629,7 @@
                 SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+                
             }
         }
         await FetchData();
@@ -612,7 +638,7 @@
 
     private void HandleIncreaseQtyItem(OrderListCustomers orderListCustomer)
     {
-        Console.WriteLine(orderListCustomer.Qty);
+        
     }
 
     private void HandleClicked(OrderListCustomers orderListCustomer)
@@ -620,7 +646,7 @@
         selectedOrderListCustomer = orderListCustomer;
         qtyPrev = orderListCustomer.QtyNum;
         showEditQty = true;
-        Console.WriteLine(orderListCustomer.Item_Id);
+        
     }
 
 
@@ -645,9 +671,9 @@
             {
                 isLoadingMenu = true;
                 isLoadingMenu = false;
-                SaveConfirmationModal?.Show("Success inserted to cart", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                SaveConfirmationModal?.Show("Success inserted to List", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+                
             }
             else
             {
@@ -656,7 +682,7 @@
                 SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+                
             }
         }
         await FetchData();
@@ -727,7 +753,7 @@
                 isLoadingMenu = false;
                 SaveConfirmationModal?.Show($"Success, order created with number : {response.DocNo}", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmationCheckout), "Ok", false);
                 // Tampilkan pesan sukses
-                Console.WriteLine("Update Success");
+                
             }
             else
             {
@@ -736,7 +762,7 @@
                 SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
                 // Tampilkan pesan error
                 selectedOrderListCustomer.QtyNum = qtyPrev;
-                Console.WriteLine("Update Failed");
+                
             }
         }
 
@@ -746,7 +772,37 @@
         Console.WriteLine(string.Join(", ", orderSummary.GetType()
      .GetProperties()
      .Select(p => $"{p.Name}: {p.GetValue(orderSummary)}")));*@
-    
+
+    }
+
+    private async Task GetItemFromCart()
+    {
+        var data = await UserService.SetUserCartToOrder(personid);
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        if (!string.IsNullOrEmpty(data))
+        {
+            response = JsonSerializer.Deserialize<List<Response>>(data, options).FirstOrDefault() ?? new Response();
+
+            if (response.StatusCode == "200")
+            {
+                isLoadingMenu = true;
+                await Task.Delay(1000);
+                isLoadingMenu = false;
+                SaveConfirmationModal?.Show("Items have been successfully retrieved from the cart.", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                // Tampilkan pesan sukses
+                
+            }
+            else
+            {
+                isLoadingMenu = true;
+                isLoadingMenu = false;
+                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                // Tampilkan pesan error
+                
+            }
+        }
+
     }
 
   @*  private void AddToCart(Product product)
@@ -797,20 +853,26 @@
         openCourierModal = false;
     }
 
-    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null)
+    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null,string? msgYes=null,string? msgNo =null )
     {
         var message = string.IsNullOrWhiteSpace(msg)
             ? "Apakah Anda yakin ingin Menyimpan?"
             : msg;
+        var messageYes = string.IsNullOrWhiteSpace(msgYes)
+            ? "Yes"
+            : msgYes;
+        var messageNo = string.IsNullOrWhiteSpace(msgNo)
+        ? "No"
+        : msgNo;
 
         SaveConfirmationModal?.Show(
             message,                     // gunakan msg atau default
             "oi oi-warning",             // icon
             2,                           // level
             confirmAction,               // EventCallback dinamis
-            "Save",                      // confirm button label
+            messageYes,                  // confirm button label
             true,                        // show cancel
-            "Cancel"                     // cancel button label
+            messageNo                     // cancel button label
         );
     }
 
@@ -821,6 +883,8 @@
             "NEW" => "order-status",
             "PAYMENT" => "order-status-payment",
             "PROCESS" => "order-status-process",
+            "CANCELED" => "order-status-canceled",
+            "CLOSED" => "order-status-closed",
             _ => "order-status-default", // Class default jika status tidak dikenali
         };
     }
@@ -828,7 +892,7 @@
     private void Checkout()
     {
         // Implementasi checkout bisa berupa pengiriman data ke API atau proses lainnya
-        Console.WriteLine("Checkout process started...");
+       
     }
 
   

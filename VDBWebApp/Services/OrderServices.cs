@@ -77,7 +77,7 @@ namespace VDBWebApp.Services
                 var url = "";
                 var postData = new
                 {
-                    SP = $"exec SPA_GetOrderHeader '{orderid}'",
+                    SP = $"exec SPW_GetOrderHeader '{orderid}'",
                     ParamSP = new { }
                 };
 
@@ -163,7 +163,36 @@ namespace VDBWebApp.Services
                     ParamSP = new { }
                 };
 
-                Console.WriteLine(postData);
+                
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> SetQtyOrder(string orderid, string itemid, string qty, string remark)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_SetQtyOrder '{orderid}','{itemid}','{qty}','{remark}'",
+                    ParamSP = new { }
+                };
+
+
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
@@ -209,6 +238,34 @@ namespace VDBWebApp.Services
             }
         }
 
+        public async Task<string> SetDiscAmountOrder(string orderid, string itemid, string disc)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_SetDiscOrder '{orderid}','{itemid}','{disc}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public async Task<string> SetDiscPercentageCart(string personid, string itemid, string disc)
         {
             try
@@ -217,6 +274,34 @@ namespace VDBWebApp.Services
                 var postData = new
                 {
                     SP = $"exec SPW_SetDiscPercentCart '{personid}','{itemid}','{disc}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> SetDiscPercentageOrder(string orderid, string itemid, string disc)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_SetDiscPercentOrder '{orderid}','{itemid}','{disc}'",
                     ParamSP = new { }
                 };
 
@@ -293,6 +378,34 @@ namespace VDBWebApp.Services
             }
         }
 
+        public async Task<string> DeleteItemFromOrder(string orderid, string itemid)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_DeleteItemOrder '{orderid}','{itemid}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        
         public async Task<string> SetOrderInsertSO(string personid,string userid, Order order)
         {
             try
@@ -307,7 +420,6 @@ namespace VDBWebApp.Services
                     ParamSP = new { }
                 };
 
-                Console.WriteLine(postData);
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
@@ -336,7 +448,7 @@ namespace VDBWebApp.Services
                     ParamSP = new { }
                 };
 
-                Console.WriteLine(postData);
+
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
@@ -364,7 +476,7 @@ namespace VDBWebApp.Services
                     ParamSP = new { }
                 };
 
-                Console.WriteLine(postData);
+
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
@@ -381,6 +493,33 @@ namespace VDBWebApp.Services
                 return null;
             }
         }
-        
+        public async Task<string> GetOrderHistory(string personId, string period, string StatusCode, string key)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec SPW_GetOrderStatusFiltered '{personId}','{period}','{StatusCode}','{key}'",
+                    ParamSP = new { }
+                };
+
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

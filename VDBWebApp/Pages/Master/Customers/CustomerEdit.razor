@@ -19,7 +19,6 @@
 <!-- BAGIAN ATAS: Form Edit Customer -->
     <EditForm Model="@customeredit" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveCustomer))">
     <DataAnnotationsValidator />
-    <ValidationSummary />
 
     <div class="mb-3">
         <label for="PersonName" class="form-label">Person Name:</label>
@@ -28,7 +27,7 @@
             <label for="Email" class="form-label mt-2">Email:</label>
             <InputText @bind-Value="customeredit.Email" class="form-control" />
 
-        <label for="PersonCategory" class="form-label mt-2">Person Category:</label>
+        <label for="PersonCategory" class="form-label mt-2">Category:</label>
             <InputSelect id="PersonCategory" class="form-select" @bind-Value="customeredit.PersonCategory">
                 <option value="">Select Category</option>
                 <option value="WS">Whole Sale</option>
@@ -37,7 +36,7 @@
             </InputSelect>
             <ValidationMessage For="@(() => customeredit.PersonCategory)" />
 
-            <label for="CustCategoryCode" class="form-label mt-2">Customer Category:</label>
+            <label for="CustCategoryCode" class="form-label mt-2">Customer Level:</label>
             <select id="CustCategoryCode" class="form-select" @bind="customeredit.CustCategoryCode">
                 <option value="">Select Category</option>
                 @foreach (var category in custCategories)
@@ -60,31 +59,31 @@
                 <label for="credit" class="form-label mt-2">Credit Limit:</label>
                 <InputNumber id="credit" class="form-control" @bind-Value="credit" />
             }
-            <label for="ForeignCode" class="form-label mt-2">ForeignCode:</label>
+            <label for="ForeignCode" class="form-label mt-2">Jubelio Reference Code:</label>
             <InputText @bind-Value="customeredit.ForeignCode" class="form-control" />
             
     </div>
 
-    <button class="btn btn-success" type="submit">Save Customer</button>
+        <button class="btn btn-primay add-customer-button" type="submit">Save Customer</button>
 </EditForm>
 
 <hr />
 
 <!-- BAGIAN TENGAH: Store Grid -->
 <h4>Stores</h4>
-<button class="btn btn-primary mb-2" @onclick="AddStore">Add Store</button>
+    <button class="btn btn-primary add-customer-button mb-2" @onclick="AddStore">Add Store</button>
 <table class="table table-striped table-bordered table-hover person-table">
     <thead class="table-header">
         <tr>
             <th>Store Name</th>
-            <th>Phone</th>
-            <th>Street</th>
+            <th>Phone Number</th>
+            <th>Address</th>
             @if (personcategory != "WS")
                 {
                     <th>Credit Limit</th>
                 }
                
-            <th>Is Active?</th>
+            <th>Active</th>
             <th>Default</th>
             <th>Actions</th>
         </tr>
@@ -105,10 +104,13 @@
                     <td>@((store.IsActive?.Trim().ToLowerInvariant() == "true" || store.IsActive == "1" || store.IsActive == "y") ? "Yes" : "No")</td>
                     <td>@((store.IsDefault?.Trim().ToLowerInvariant() == "true" || store.IsDefault == "1" || store.IsDefault == "y") ? "Yes" : "No")</td>
                     <td>
-                            <button class="btn btn-sm btn-outline-primary edit-button me-2" @onclick="() => OpenStoreEditModal(store.StoreId)" title="Edit">
+                            
+                        <div class="input-group mb-1">
+                        <button class="btn btn-sm btn-outline-primary edit-button me-2" @onclick="() => OpenStoreEditModal(store.StoreId)" title="Edit">
                             <img src="images/material/edit.png" alt="Edit" class="edit-icon" />
-                        </button>
-                            <button class="btn btn-secondary" @onclick="() => SetDefault(store.StoreId)">Set Default</button>
+                           </button>
+                            <button class="btn btn-secondary add-customer-button" @onclick="() => SetDefault(store.StoreId)">Set Default</button>
+                          </div>
                     </td>
                 </tr>
             }
@@ -127,7 +129,7 @@
 
 <!-- BAGIAN BAWAH: User Grid -->
 <h4>Users</h4>
-<button class="btn btn-primary mb-2" @onclick="AddUser">Add User</button>
+    <button class="btn btn-primary add-customer-button mb-2" @onclick="AddUser">Add User</button>
 <table class="table table-striped table-bordered table-hover person-table">
     <thead class="table-header">
         <tr>
@@ -141,7 +143,7 @@
         {
                 @foreach (var user in customersuser)
                 {
-                    Console.WriteLine(user.UserId);
+        
                 <tr>
                     <td>@user.UserId</td>
                     <td>@user.RangePeriod</td>
@@ -183,7 +185,6 @@
                 <div class="modal-body">
                     <EditForm Model="@selectedStore" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveEditStore))" >
                     <DataAnnotationsValidator />
-                    <ValidationSummary />
                     
                     <div class="mb-3">
                         <label for="StoreName" class="form-label">Store Name</label>
@@ -200,8 +201,13 @@
 
                     <div class="mb-3">
                         <label for="StreetAddress" class="form-label">Street Address</label>
-                        <InputText id="StreetAddress" class="form-control" @bind-Value="selectedStore.StreetAddress" readonly @onclick="ShowAddressLookupModal" />
+                            <div class="input-group mb-1">
+                        <InputText id="StreetAddress" class="form-control" @bind-Value="selectedStore.StreetAddress" readonly />
+                                <button class="btn btn-outline-secondary" @onclick="ShowAddressLookupModal" type="button" title="Find Address">
+                                    <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
+                                </button>
                         <ValidationMessage For="@(() => selectedStore.StreetAddress)" />
+                            </div>
                     </div>
                         @if (personcategory !="WS")
                         {
@@ -213,13 +219,16 @@
 
                         }
                     
-                    <div class="mb-3">
-                        <label for="isactive" class="form-label">Is Active</label>
-                        <InputSelect id="isactive" class="form-select" @bind-Value="selectedStore.IsActive">
-                            <option value="True">Yes</option>
-                            <option value="False">No</option>
-                        </InputSelect>
-                    </div>
+                        <div class="form-check mb-3 mt-1">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="isActiveCheck"
+                                   @bind="IsActiveBooledit" />
+
+                            <label class="form-check-label" for="isActiveCheck">
+                                Active
+                            </label>
+                        </div>
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-primary">Save</button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => CloseStoreEditModal(selectedStore.StoreId)">Cancel</button>
@@ -243,7 +252,6 @@
                 <div class="modal-body">
                     <EditForm Model="@newStore" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveNewStore))">
                         <DataAnnotationsValidator />
-                        <ValidationSummary />
                         <div class="mb-3">
                             <label for="StoreName" class="form-label">Store Name</label>
                             <InputText id="StoreName" class="form-control" @bind-Value="newStore.StoreName" />
@@ -258,8 +266,13 @@
                         </div>
                         <div class="mb-3">
                             <label for="StreetAddress" class="form-label">Street Address</label>
-                            <InputText id="StreetAddress" class="form-control" @bind-Value="newStore.StreetAddress" readonly @onclick="ShowAddressLookupModal" />
+                            <div class="input-group mb-1">
+                            <InputText id="StreetAddress" class="form-control" @bind-Value="newStore.StreetAddress" readonly  />
+                                <button class="btn btn-outline-secondary" @onclick="ShowAddressLookupModal" type="button" title="Find Address">
+                                    <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
+                                </button>
                             <ValidationMessage For="@(() => newStore.StreetAddress)" />
+                                </div>
                         </div>
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-primary">Save</button>
@@ -284,7 +297,6 @@
             <div class="modal-body">
                     <EditForm Model="@selectedUser" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveEditUser))">
                     <DataAnnotationsValidator />
-                    <ValidationSummary />
                     <div class="mb-3">
                         <label for="UserName" class="form-label">User Name</label>
                             <InputText id="UserName" class="form-control" @bind-Value="selectedUser.UserId" readonly />
@@ -349,7 +361,6 @@
                 <div class="modal-body">
                     <EditForm Model="@newUser" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveAddUser))">
                         <DataAnnotationsValidator />
-                        <ValidationSummary />
                         <div class="mb-3">
                             <label for="UserName" class="form-label">User Name</label>
                             <InputText id="UserName" class="form-control" @bind-Value="newUser.UserId" />
@@ -489,13 +500,13 @@
 
         if (!string.IsNullOrEmpty(datastore))
         {
-            Console.WriteLine(datastore);
+            
             customersstore = JsonSerializer.Deserialize<List<CustomerStore>>(datastore, options);
         }
 
         if (!string.IsNullOrEmpty(datauser))
         {
-            Console.WriteLine(datauser);
+            
             customersuser = JsonSerializer.Deserialize<List<CustomerUser>>(datauser, options);
         }
     }
@@ -513,11 +524,11 @@
 
         var data = await CustomerService.SetCustomersdetail(customeredit);
 
-        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(customeredit)); 
+
 
         await Task.Delay(500);
         isLoading = false;
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
     }
 
     /********************************End Customer Detail Section **********************************/
@@ -553,8 +564,7 @@
         selectedStore = customersstore.FirstOrDefault(s => s.StoreId == storeid);
         creditstore = int.TryParse(selectedStore.CreditLimit?.Replace(",", ""), out var result) ? result : 0;
 
-        Console.WriteLine(selectedStore.IsActive);
-
+        
         showEditStoreModal = true;
     }
 
@@ -573,7 +583,7 @@
 
         await Task.Delay(500);
         isLoading = false;
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
         showEditStoreModal = false;
     }
 
@@ -588,7 +598,7 @@
         await Task.Delay(500);
 
         isLoading = false;
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
         showAddStoreModal = false;
 
     }
@@ -600,9 +610,16 @@
         selectedStore = customersstore.FirstOrDefault(s => s.StoreId == storeid);
         var setdefault = CustomerService.SetDefaultCustomerStore(selectedStore.StoreId, personid); 
         isLoading = false;
-        SaveConfirmationModal?.Show($"Berhasil set toko {selectedStore.StoreName} ke default", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        SaveConfirmationModal?.Show($"Successfully set {selectedStore.StoreName} to default", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
     }
 
+
+    private bool IsActiveBooledit
+    {
+        get => selectedStore?.IsActive?.ToLower() == "true";
+        set => selectedStore.IsActive = value ? "true" : "false";
+
+    }
     /******************************** END Customer Store  Section **********************************/
 
 
@@ -656,8 +673,8 @@
 
         await Task.Delay(500);
         isLoading = false;
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
-        showEditStoreModal = false;
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        showEditUserModal = false;
     }
 
     private async Task SaveAddUser()
@@ -669,8 +686,8 @@
 
         await Task.Delay(500);
         isLoading = false;
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
-        showAddStoreModal = false;
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        showAddUserModal = false;
     }
 
     private void AddUser()
@@ -701,16 +718,26 @@
 
     /******************************** END Address  Section **********************************/
 
-    private async Task ShowSaveConfirmation(EventCallback confirmAction)
+    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null, string? msgYes = null, string? msgNo = null)
     {
+        var message = string.IsNullOrWhiteSpace(msg)
+            ? "Do you want to save the changes?"
+            : msg;
+        var messageYes = string.IsNullOrWhiteSpace(msgYes)
+            ? "Yes"
+            : msgYes;
+        var messageNo = string.IsNullOrWhiteSpace(msgNo)
+        ? "No"
+        : msgNo;
+
         SaveConfirmationModal?.Show(
-            "Apakah Anda yakin ingin Menyimpan?",    // message
-            "oi oi-warning",                         // icon
-            2,                                       // level
-            confirmAction,                           // EventCallback dinamis
-            "Save",                                  // confirm button label
-            true,                                    // show cancel
-            "Cancel"                                 // cancel button label
+            message,                     // gunakan msg atau default
+            "oi oi-warning",             // icon
+            2,                           // level
+            confirmAction,               // EventCallback dinamis
+            messageYes,                  // confirm button label
+            true,                        // show cancel
+            messageNo                     // cancel button label
         );
     }
 

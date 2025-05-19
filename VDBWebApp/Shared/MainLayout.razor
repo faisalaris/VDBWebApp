@@ -20,12 +20,25 @@
             @if (!string.IsNullOrEmpty(loggedInUsername))
             {
                 <div class="user-info">
-                    <span class="me-2">@loggedInUsername</span>
-                    <span class="oi oi-person user-icon" aria-hidden="true" @onclick="ToggleUserMenu"></span>
+                    <span class="text-center me-2">@loggedInUsername</span>
+                    @if (usertype == "ADMIN")
+                    {
+                        <NavLink href="userprofile_admin" class="p-2" title="User Profile">
+                            <span class="oi oi-person user-icon" aria-hidden="true"></span>
+                        </NavLink>
+                    }
+                    else
+                    {
+                        <NavLink href="userprofile" class="p-2" title="User Profile">
+                            <span class="oi oi-person user-icon" aria-hidden="true"></span>
+                        </NavLink>
+                    }
+
+                    <span class="oi oi-account-logout p-2" style="cursor: pointer;" title="Logout" aria-hidden="true" @onclick="ShowLogoutConfirmation"></span>
                     @if (isUserMenuOpen)
                     {
                         <div class="user-menu">
-                            <NavLink class="dropdown-item" href="profile">
+                            <NavLink class="dropdown-item" href="userprofile" @onclick = "CloseUserMenu">
                                 User Profile
                             </NavLink>
                             <div class="dropdown-divider"></div>
@@ -42,7 +55,7 @@
             }
         </div>
 
-        <article class="content px-4">
+        <article class="content px-4 mb-6">
             @Body
         </article>
     </main>
@@ -56,6 +69,7 @@
     private WarningModal warningModal;
     private bool isUserMenuOpen = false;
     private ActionModal? logoutConfirmationModal;
+    private string usertype ="";
 
     protected override async Task OnInitializedAsync()
     {
@@ -70,6 +84,7 @@
                     if (userData != null && userData.Count > 0)
                     {
                         loggedInUsername = userData[0]?.username;
+                        usertype = userData[0].usertype;
                     }
                 }
                 catch (JsonException ex)
@@ -96,6 +111,10 @@
     {
         isUserMenuOpen = !isUserMenuOpen;
     }
+    private void CloseUserMenu()
+    {
+        isUserMenuOpen = false;
+    }
 
     private async Task Logout()
     {
@@ -109,7 +128,7 @@
 
     private void ShowLogoutConfirmation()
     {
-        logoutConfirmationModal?.Show("Apakah Anda yakin ingin keluar?", "oi oi-warning", 2, EventCallback.Factory.Create(this, Logout), "Keluar", true, "Batal");
+        logoutConfirmationModal?.Show("Are you sure you want to log out?", "oi oi-warning", 2, EventCallback.Factory.Create(this, Logout), "Yes", true, "Cancel");
         isUserMenuOpen = false; // Tutup dropdown setelah klik logout
     }
 
@@ -125,3 +144,22 @@
         public string? paymentnotename { get; set; }
     }
 }
+
+
+
+@* <div class="user-info">
+                    <span class="me-2">@loggedInUsername</span>
+                    <span class="oi oi-person user-icon" aria-hidden="true" @onclick="ToggleUserMenu"></span>
+                    @if (isUserMenuOpen)
+                    {
+                        <div class="user-menu">
+                            <NavLink class="dropdown-item" href="userprofile" @onclick = "CloseUserMenu">
+                                User Profile
+                            </NavLink>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item" @onclick="ShowLogoutConfirmation">
+                                Log Out
+                            </button>
+                        </div>
+                    }
+                </div>*@

@@ -15,14 +15,15 @@
 <div class="container">
     @* Search Bar *@
     <h1 class="product-page-title">Product List</h1>
-    <input
-        type="text"
-        placeholder="Search product..."
-        value="@search"
-        @oninput="HandleSearch"
-        maxlength="50"
-        class="product-search-input" 
-     />
+
+    <div class="search-bar-container">
+        <input type="text"
+               placeholder="Search product..."
+               value="@search"
+               @oninput="HandleSearch"
+               maxlength="50"
+               class="product-search-input" />
+    </div>
 
     @* Product Grid *@
     <div class="product-grid">
@@ -30,11 +31,12 @@
         {
             @foreach (var product in products)
             {
-                <ProductCard ItemCode="@product.item_code"
+                <ProductCard product="@product"
+                             ItemCode="@product.item_code"
                              ItemName="@product.item_name"
                              Thumbnail="@product.thumbnail"
                              Price="@product.item_price"
-                             ItemId="@product.item_id" 
+                             ItemId="@product.item_id"
                              IsPrice="false" />
             }
         }
@@ -48,7 +50,7 @@
         }
     </div>
 
-    <div id="load-sentinel" style="height: 1px;"></div>
+    <div id="load-sentinel" style="height: 1px; min-height:300px;"></div>
     @* Loading Indicator *@
     @if (loading)
     {
@@ -62,7 +64,7 @@
     private string search = "";
     private int page = 1;
     private bool loading = false;
-    private string ? errorMessage;
+    private string? errorMessage;
     private bool hasMore = true;
 
     protected override async Task OnInitializedAsync()
@@ -85,8 +87,8 @@
 
         try
         {
-           var listproducts = await ProductService.GetListProducts(page,search);           
-           
+            var listproducts = await ProductService.GetListProducts(page, search);
+
 
             if (listproducts != null && listproducts.Any())
             {
@@ -102,7 +104,7 @@
                 {
                     products.AddRange(newproducts);
                 }
-            
+
             }
             else
             {
@@ -116,6 +118,10 @@
         }
         finally
         {
+            if (newproducts.Count == 0)
+            {
+                hasMore = false;
+            }
             loading = false;
             StateHasChanged(); // Force re-render after loading
         }
@@ -128,6 +134,8 @@
         search = value.Substring(0, Math.Min(value.Length, 50)); // Enforce length limit
         page = 1; // Reset page on new search
         await FetchProducts();
+        await JSRuntime.InvokeVoidAsync("scrollToTop");
+        hasMore = true;
     }
 
     private string SanitizeInput(string input)
@@ -139,6 +147,7 @@
     [JSInvokable]
     public async Task LoadMoreProducts()
     {
+
         if (!loading && hasMore)
         {
             page++;

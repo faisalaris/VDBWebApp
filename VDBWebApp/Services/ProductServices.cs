@@ -42,6 +42,33 @@ namespace VDBWebApp.Services
                 return null;
             }
         }
+        public async Task<string> GetListProductsUser(int page, string query,string userid)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec dbo.SPW_GetItemUser {page * 10},'%{query}%','{userid}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
         public async Task<string> GetProduct(string itemId)
         {
@@ -51,6 +78,33 @@ namespace VDBWebApp.Services
                 var postData = new
                 {
                     SP = $"exec dbo.SPA_GetProductEdit '{itemId}'",
+                    ParamSP = new { }
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(postData), Encoding.UTF8, "application/json")
+                };
+
+                // Menambahkan header
+
+                var response = await _httpClient.SendAsync(request);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                return jsonResponse;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        public async Task<string> GetProductUser(string itemId,string userid)
+        {
+            try
+            {
+                var url = "";
+                var postData = new
+                {
+                    SP = $"exec dbo.SPW_GetProductEdit '{itemId}','{userid}'",
                     ParamSP = new { }
                 };
 

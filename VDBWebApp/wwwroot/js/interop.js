@@ -36,6 +36,16 @@ window.triggerClick = (element) => {
         element.click();
 };
 
+window.scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.scrollToTopModal = (element) => {
+    if (element) {
+        element.scrollTop = 0;
+    }
+};
+
 window.readFileAsHex = (input, dotNetHelper) => {
     const file = input.files[0];
     if (!file) return;
@@ -84,4 +94,13 @@ window.downloadBase64File = (base64, fileName) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+};
+
+window.autoClickCarouselNextProdHome = function () {
+    setInterval(() => {
+        const btn = document.getElementById("autoNextBtn");
+        if (btn) {
+            btn.click();
+        }
+    }, 4000);
 };

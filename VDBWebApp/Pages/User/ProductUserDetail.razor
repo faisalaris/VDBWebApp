@@ -12,6 +12,8 @@
 @inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
 @inject Services.ProductServices ProductService
 @inject Services.GensetServices GensetService
+@inject Services.UserServices UserService
+
 
 <h1>Product Detail</h1>
 
@@ -35,12 +37,24 @@
                          title="cart"
                          style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
                          @onclick="CartAction" />
+                    @if (product.isWishlist == "0")
+                    {
+                        <img src="images/material/wishlist_nofill.png"
+                        alt="Wishlist"
+                        title="Wishlist"
+                        style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+                        @onclick="WishAction" />
+                    }
+                    else
+                    {
 
-                    <img src="images/material/wishlist_nofill.png"
-                         alt="Wishlist"
-                         title="Wishlist"
-                         style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
-                         @onclick="WishAction" />
+                        <img src="images/material/wishlist_fill.png"
+                             alt="Wishlist"
+                             title="Wishlist"
+                             style="cursor: pointer; width: 32px; height: 32px; margin-top: 10px;"
+                             @onclick="WishDeleteAction" />
+                    
+                    }
                 </div>
             </div>
             <div class="col-md-8">
@@ -104,6 +118,16 @@ else
 <ActionModal @ref="SaveConfirmationModal" />
 <WarningModal @ref="warningModal" />
 
+@if (isLoadingWish)
+{
+    <ProgressCart LoadingImageUrl="images/material/wish_gif.gif" />
+}
+
+@if (isLoadingCart)
+{
+    <ProgressCart LoadingImageUrl="images/material/cart_add_gif.gif" />
+}
+
 @if (isLoading)
 {
     <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
@@ -113,6 +137,7 @@ else
 
     private Product? product;
     private string? errorMessage;
+    private string? user;
 
     private List<Category> categories = new List<Category>();
     private List<Category> _filteredCategories = new List<Category>();
@@ -120,7 +145,10 @@ else
     private bool showCategories = false;
     private ActionModal? SaveConfirmationModal;
     private WarningModal warningModal;
+
     private bool isLoading = false;
+    private bool isLoadingCart = false;
+    private bool isLoadingWish = false;
 
     int itemPrice = 0;
     int msrp = 0;
@@ -134,35 +162,11 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var itemId = await LocalStorage.GetItemAsync<string>("selectedProduct");
-        var Data = await ProductService.GetProduct(itemId ?? "");
-        var category = await GensetService.GetListCategory();
 
+        user = await LocalStorage.GetItemAsync<string>("userid");
         try
         {
-
-            if (!string.IsNullOrEmpty(Data))
-            {
-                // Simulasikan pengambilan data dari API (ganti dengan logika Anda)
-                await Task.Delay(500);
-
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                product = JsonSerializer.Deserialize<List<Product>>(Data, options)?.FirstOrDefault();
-                product.item_id = itemId;
-
-                itemPrice = int.Parse(product.item_price);
-                msrp = int.Parse(product.msrp);
-                itemStock = int.Parse(product.item_stock);
-
-                //Console.WriteLine(product.item_id);
-                categories = categories = JsonSerializer.Deserialize<List<Category>>(category, options) ?? new List<Category>();
-                filteredCategories = categories;
-            }
-            if (product == null)
-            {
-                warningModal.Show("Product tidak di temukan", "bi bi-exclamation-triangle", 1);
-                errorMessage = "Product not found.";
-            }
+            FetchProduct();
         }
         catch (Exception ex)
         {
@@ -172,7 +176,39 @@ else
         }
     }
 
-    
+    private async Task FetchProduct()
+    {
+        var itemId = await LocalStorage.GetItemAsync<string>("selectedProduct");
+        var Data = await ProductService.GetProductUser(itemId ?? "", user);
+        var category = await GensetService.GetListCategory();
+        
+
+        if (!string.IsNullOrEmpty(Data))
+        {
+            // Simulasikan pengambilan data dari API (ganti dengan logika Anda)
+            await Task.Delay(500);
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            product = JsonSerializer.Deserialize<List<Product>>(Data, options)?.FirstOrDefault();
+            product.item_id = itemId;
+
+            itemPrice = int.Parse(product.item_price);
+            msrp = int.Parse(product.msrp);
+            itemStock = int.Parse(product.item_stock);
+
+            //Console.WriteLine(product.item_id);
+            categories = categories = JsonSerializer.Deserialize<List<Category>>(category, options) ?? new List<Category>();
+            filteredCategories = categories;
+        }
+        if (product == null)
+        {
+            warningModal.Show("Product tidak di temukan", "bi bi-exclamation-triangle", 1);
+            errorMessage = "Product not found.";
+        }
+
+    }
+
+
 
     private List<Category> filteredCategories
     {
@@ -189,13 +225,42 @@ else
         Navigation.NavigateTo("/producthome"); // Arahkan kembali ke halaman produk
     }
 
-    private async Task CartAction()
+    private async Task CartAction() 
     {
+        isLoadingCart = true;
+        await Task.Delay(500);
+        var data = await UserService.SetUserItemToCart(user, product.item_id, "1");
+        await Task.Delay(500);
+        isLoadingCart = false;
+        await FetchProduct();
+        StateHasChanged();
+        Navigation.NavigateTo("/productuserdetail");
 
     }
 
     private async Task WishAction()
     {
+        isLoadingWish = true;
+        await Task.Delay(500);
+        var data = await UserService.SetUserItemToWish(user, product.item_id);
+        await Task.Delay(500);
+        isLoadingWish = false;
+        await FetchProduct();
+        StateHasChanged();
+        Navigation.NavigateTo("/productuserdetail");
 
+    }
+
+    private async Task WishDeleteAction()
+    {
+        isLoadingWish = true;
+        await Task.Delay(500);
+        var data = UserService.SetUserSubstractWish(user, product.item_id);
+        await Task.Delay(500);
+        isLoadingWish = false;
+        await FetchProduct();
+        StateHasChanged();
+        Navigation.NavigateTo("/productuserdetail");
+        
     }
 }

@@ -1,0 +1,607 @@
+﻿@page "/UserProfile_admin"
+
+@using System.Text.Json
+@using Blazored.LocalStorage
+@using Radzen
+@using Radzen.Blazor
+@using Models
+@using System.Globalization;
+
+
+@inject ILocalStorageService LocalStorage // Jika Anda menggunakan Blazored.LocalStorage
+@inject IJSRuntime JSRuntime // Jika perlu untuk JSInterop
+@inject Services.CustomerServices CustomerService
+@inject Services.GensetServices GensetService
+@inject Services.UserServices UserService
+@inject NavigationManager Navigation
+
+<div class="container">
+
+    <div class="membership-card @GetCardClass(userType)">
+        <img src="images/VDBDefault.jpg" alt="Profile" class="profile-image" />
+        <div class="membership-content">
+            <span class="membership-label">Membership</span>
+            <h5 class="membership-role mt-4">@GetCategoryName(userType)</h5>
+            <span class="membership-label mt-4">@userProfile.StartDate</span>
+        </div>
+    </div>
+
+    <button class="btn btn-primary add-customer-button mb-2" @onclick="AddUser">Add User</button>
+    <table class="table table-striped table-bordered table-hover person-table">
+        <thead class="table-header">
+            <tr>
+                <th>User ID</th>
+                <th>Active Period</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (customersuser != null && customersuser.Any())
+            {
+                @foreach (var user in customersuser)
+                {
+                    
+                    <tr>
+                        <td>@user.UserId</td>
+                        <td>@user.RangePeriod</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary edit-button" @onclick="() => OpenUserEditModal(user.UserId)" title="Edit">
+                                <img src="images/material/edit.png" alt="Edit" class="edit-icon" />
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center">Data tidak tersedia</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @*
+    <button class="btn btn-outline-danger centered-button mt-5" @onclick="ChangePassword">
+        <span class="oi oi-key me-2"  aria-hidden="true"></span> Change Password
+    </button> *@
+
+
+</div>
+
+@if (showEditUserModal)
+{
+<div class="modal fade show" tabindex="-1" role="dialog" style="display:block;">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseUserEditModal"></button>
+            </div>
+            <div class="modal-body">
+                    <EditForm Model="@selectedUser" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveEditUser))">
+                    <DataAnnotationsValidator />
+                    <div class="mb-3">
+                        <label for="UserName" class="form-label">User Name</label>
+                            <InputText id="UserName" class="form-control" @bind-Value="selectedUser.UserId" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label for="UserPassword" class="form-label">User Password</label>
+                            <InputText id="UserPassword" type="password" class="form-control" @bind-Value="selectedUser.UserPassword" placeholder="Input Password" />
+                            <ValidationMessage For="@(() => selectedUser.UserPassword)" />
+                    </div>
+                    <div class="mb-3">
+                            <label for="startdate" class="form-label">Start Date</label>
+                            <InputDate id="startdate" class="form-control" @bind-Value="selectedUser.StartDate_DateType" placeholder="Choose Date" />
+                            <ValidationMessage For="@(() => selectedUser.StartDate)" />
+                    </div>
+                        <div class="mb-3">
+                            <label for="expiredate" class="form-label">Expire Date</label>
+                            @if (isNeverExpire)
+                            {
+                                <input type="text" class="form-control"  value="" readonly />
+                            }
+                            else
+                            {
+                                <InputDate id="expiredate"
+                                           class="form-control"
+                                           @bind-Value="selectedUser.UserExpireDate_DateType"
+                                           placeholder="Choose Date" />
+                            }
+                            <ValidationMessage For="@(() => selectedUser.UserExpireDate)" />
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="neverExpire"
+                                   checked="@isNeverExpire"
+                                   @onchange="OnNeverExpireChanged" />
+                            <label class="form-check-label" for="neverExpire">
+                                Never Expire
+                            </label>
+                        </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseUserEditModal">Cancel</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@if (showAddUserModal)
+{
+    <div class="modal fade show" tabindex="-1" role="dialog" style="display:block;">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseUserAddModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@newUser" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveAddUser))">
+                        <DataAnnotationsValidator />
+                        <div class="mb-3">
+                            <label for="UserName" class="form-label">User Name</label>
+                            <InputText id="UserName" class="form-control" @bind-Value="newUser.UserId" />
+                            <ValidationMessage For="@(() => newUser.UserId)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="UserPassword" class="form-label">User Password</label>
+                            <InputText id="UserPassword" type="password" class="form-control" @bind-Value="newUser.UserPassword" placeholder="Input Password" />
+                            <ValidationMessage For="@(() => newUser.UserPassword)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="startdate" class="form-label">Start Date</label>
+                            <InputDate id="startdate" class="form-control" @bind-Value="newUser.StartDate_DateType" readonly />
+                            <ValidationMessage For="@(() => newUser.StartDate)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="expiredate" class="form-label">Expire Date</label>
+                            @if (isNeverExpire)
+                            {
+                                <input type="text" class="form-control" value="" readonly />
+                            }
+                            else
+                            {
+                                <InputDate id="expiredate"
+                                           class="form-control"
+                                           @bind-Value="newUser.UserExpireDate_DateType"
+                                           placeholder="Choose Date" />
+                            }
+                            <ValidationMessage For="@(() => newUser.UserExpireDate)" />
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="neverExpire"
+                                   checked="@isNeverExpire"
+                                   @onchange="OnNeverExpireChanged" />
+                            <label class="form-check-label" for="neverExpire">
+                                Never Expire
+                            </label>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseUserAddModal">Cancel</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@if (showChangePassword)
+{
+    <div class="modal fade show" tabindex="-1" role="dialog" style="display:block;">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="ClosePasswrodModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@userPassword" OnValidSubmit="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, SaveChangePassword),msgPassword)">
+                        <DataAnnotationsValidator />
+                        <div class="mb-3">
+                            <label for="OldPwd" class="form-label">Old Password</label>
+                            <InputText id="OldPwd" type="password" class="form-control" @bind-Value="userPassword.OldPassword" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="NewPwd" class="form-label">New Password</label>
+                            <InputText id="NewPwd" type="password" class="form-control" @bind-Value="userPassword.NewPassword" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="ConfirmPwd" class="form-label">Confirm Password</label>
+                            <InputText id="CfnPwd" type="password" class="form-control" @bind-Value="userPassword.ConfirmPassword" />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="ClosePasswrodModal">Cancel</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+<ActionModal @ref="SaveConfirmationModal" />
+
+@if (isLoading)
+{
+    <ProgressCircle LoadingImageUrl="images/logoVDB.png" />
+}
+
+@code {
+
+    private bool showAddUserModal = false;
+    private bool isLoading = false;
+    private bool showEditUserModal = false;
+    private bool isNeverExpire;
+    private bool showChangePassword = false;
+
+    string personid = "";
+    string personcategory;
+    string userType = "";
+    string msgPassword = "Do you want to change Password?";
+    private DateTime? previousExpireDate;
+
+    private ActionModal? SaveConfirmationModal;
+
+    private CustomerUser selectedUser = new();
+    private List<CustomerUser> customersuser = new();
+    private CustomerUser newUser = new();
+    private CustomerUserPassword userPassword = new();
+    private CustomerUserProfile userProfile = new();
+    private Response response = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        userType = await LocalStorage.GetItemAsync<string>("usertype");
+        personid = await LocalStorage.GetItemAsync<string>("personid");
+        userPassword.UserId = await LocalStorage.GetItemAsync<string>("userid");
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var datauser = await CustomerService.GetCustomerUser(personid);
+
+        var dataprofile = await UserService.GetUserProfile(userPassword.UserId);
+
+        if (!string.IsNullOrEmpty(datauser))
+        {
+            
+            customersuser = JsonSerializer.Deserialize<List<CustomerUser>>(datauser, options);
+        }
+
+        if (!string.IsNullOrEmpty(dataprofile))
+        {
+
+            userProfile = JsonSerializer.Deserialize<List<CustomerUserProfile>>(dataprofile, options)?.FirstOrDefault() ?? new();
+
+        }
+
+    }
+
+    private string GetCardClass(string role)
+    {
+        return role?.ToLower() switch
+        {
+            "admin" => "admin",
+            "dsm" => "dsm",
+            "ws" => "ws",
+            _ => "ws" // fallback
+        };
+    }
+
+    private string GetCategoryName(string role)
+    {
+        return role?.ToLower() switch
+        {
+            "admin" => "Administrator",
+            "dsm" => "Drop Shipper -  Market Place",
+            "ws" => "Whole Sales",
+            "dsd" => "Drop Shipper - Direct",
+            _ => "ws" // fallback
+        };
+    }
+
+
+    private async Task OpenUserEditModal(string user)
+    {
+        showEditUserModal = true;
+        selectedUser = customersuser.FirstOrDefault(s => s.UserId == user);
+    }
+
+    private async Task AddUser()
+    {
+        showAddUserModal = true;    
+
+    }
+
+    private async Task ShowSaveConfirmation(EventCallback confirmAction, string? msg = null, string? msgYes = null, string? msgNo = null)
+    {
+        var message = string.IsNullOrWhiteSpace(msg)
+            ? "Apakah Anda yakin ingin Menyimpan?"
+            : msg;
+        var messageYes = string.IsNullOrWhiteSpace(msgYes)
+            ? "Yes"
+            : msgYes;
+        var messageNo = string.IsNullOrWhiteSpace(msgNo)
+        ? "No"
+        : msgNo;
+
+        SaveConfirmationModal?.Show(
+            message,                     // gunakan msg atau default
+            "oi oi-warning",             // icon
+            2,                           // level
+            confirmAction,               // EventCallback dinamis
+            messageYes,                  // confirm button label
+            true,                        // show cancel
+            messageNo                     // cancel button label
+        );
+    }
+
+    private void ToggleNeverExpireDate()
+    {
+        if (isNeverExpire)
+        {
+            // Simpan nilai saat ini sebelum di-null-kan
+            previousExpireDate = selectedUser.UserExpireDate_DateType;
+            selectedUser.UserExpireDate_DateType = null;
+        }
+        else
+        {
+            // Kembalikan nilai sebelumnya
+            selectedUser.UserExpireDate_DateType = previousExpireDate;
+        }
+    }
+
+    private void OnNeverExpireChanged(ChangeEventArgs e)
+    {
+        isNeverExpire = (bool)e.Value;
+        ToggleNeverExpireDate();
+    }
+
+    private void CloseUserEditModal()
+    {
+        showEditUserModal = false;
+    }
+
+    private async Task SaveEditUser()
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+
+        var editUser = await CustomerService.SetEditCustomersUser(selectedUser);
+
+        await Task.Delay(500);
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        showEditUserModal = false;
+    }
+
+    private void SuccessConfirmation()
+    {
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+
+    private void CloseUserAddModal()
+    {
+        showAddUserModal = false;
+    }
+
+    private async Task SaveAddUser()
+    {
+        isLoading = true;
+        await Task.Delay(1000);
+
+        var addUser = await CustomerService.SetAddCustomersUser(newUser, personid);
+
+        await Task.Delay(500);
+        isLoading = false;
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        showAddUserModal = false;
+    }
+
+    private async Task ChangePassword()
+    {
+        showChangePassword = true;
+       
+    }
+
+    private void ClosePasswrodModal()
+    {
+        showChangePassword = false;
+    }
+
+    private async Task SaveChangePassword()
+    {
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var data = await UserService.SetUserChangePassword(userPassword);
+        if (!string.IsNullOrEmpty(data))
+        {
+            response = JsonSerializer.Deserialize<List<Response>>(data, options).FirstOrDefault() ?? new Response();
+
+
+            if (response.StatusCode == "200")
+            {
+                isLoading = true;
+                await Task.Delay(1000);
+                isLoading = false;
+                SaveConfirmationModal?.Show("Password successfully changed", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+                // Tampilkan pesan sukses
+                
+            }
+            else
+            {
+                isLoading = true;
+                isLoading = false;
+                SaveConfirmationModal?.Show(response.Msg, "bi bi-exclamation-triangle", 1, EventCallback.Factory.Create(this, NoConfirmation), "Ok", false);
+                // Tampilkan pesan error
+                
+            }
+        }
+
+    }
+
+    private void NoConfirmation()
+    {
+
+    }
+}
+
+<style>
+
+    .table-container {
+        position: relative; /* Untuk memposisikan tombol tambah */
+    }
+
+    .table-header-actions {
+        position: absolute;
+        top: 300;
+        right: 0;
+        z-index: 200; /* Pastikan di atas tabel */
+    }
+
+    .add-button {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .add-icon {
+        width: 16px;
+        height: 16px;
+        vertical-align: middle;
+    }
+
+    table.person-table.table {
+        background-color: var(--brown) !important;
+        color: var(--light-brown) !important;
+    }
+
+        table.person-table.table th {
+            background-color: var(--brown) !important;
+            color: var(--warm-white) !important;
+        }
+
+        table.person-table.table td {
+            background-color: var(--warm-white) !important;
+            color: var(--dark-brown) !important;
+        }
+
+        table.person-table.table tbody tr:hover {
+            background-color: #e6d7c5 !important;
+            color: #000 !important;
+        }
+
+    .edit-button {
+        padding: 0.25rem 0.5rem; /* Lebih kecil padding tombol */
+        border: none;
+        background-color: var(--dark-brown); /* Transparan background */
+        cursor: pointer;
+    }
+
+        .edit-button:hover {
+            background-color: rgba(0, 0, 0, 0.1); /* Sedikit latar belakang saat dihover */
+        }
+
+    .edit-icon {
+        width: 16px; /* Ukuran ikon */
+        height: 16px;
+        vertical-align: middle; /* Pusatkan ikon vertikal */
+    }
+
+    /* Jika Anda ingin agar tombol selalu berada di tengah vertikal sel */
+    .person-table td {
+        vertical-align: middle;
+    }
+
+    .centered-button {
+        width: 50%; /* Lebar tombol */
+        display: block; /* Membuat tombol menjadi block-level element */
+        margin: 0 auto; /* Margin otomatis kiri dan kanan untuk memusatkan */
+    }
+
+    .profile-image {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .membership-card {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        height: 200px;
+        margin: 20px auto;
+        padding: 30px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        color: var(--dark-brown);
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Vertikal center */
+        align-items: center; /* Horizontal center */
+        text-align: center;
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .membership-card:hover {
+            transform: scale(1.02);
+        }
+
+    .membership-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .membership-role {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .membership-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        opacity: 0.7;
+    }
+
+    /* Warna background berdasarkan usertype */
+    .membership-card.admin {
+        background-color: var(--dark-brown);
+        color: var(--warm-white);
+    }
+
+    .membership-card.dsm {
+        background-color: var(--light-brown);
+        color: var(--dark-brown);
+    }
+
+    .membership-card.ws {
+        background-color: var(--warm-white);
+        color: var(--dark-brown);
+        border: 1px solid var(--light-brown);
+    }
+
+
+</style>

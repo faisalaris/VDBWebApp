@@ -1,10 +1,13 @@
 ﻿using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
 
 namespace VDBWebApp.Models
 {
     public class Genset
     {
+        [Required(ErrorMessage = "Please fill Mandatory Field Code")]
         public string? GCode { get; set; }
+        [Required(ErrorMessage = "Please fill Mandatory Field Name")]
         public string? Gname { get; set; }
 
         public string? Gimage { get; set; }

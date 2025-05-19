@@ -10,12 +10,8 @@
             <tr
                 <th>Action</th>
                 <th>Name</th>
-                <th>Email</th>
-                <th>Phone Number</th>
                 <th>Category</th>
                 <th>Payment Note</th>
-                <th>Jubelio reference Code</th>
-
             </tr>
         </thead>
         <tbody>
@@ -25,25 +21,20 @@
                 {
                     <tr>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary edit-button" @onclick="() => EditCustomer(person.PersonId)" title="Edit">
+                            <button class="btn btn-sm btn-outline-primary edit-button" @onclick="() => EditCustomer(person)" title="Choose">
                                 <img src="images/material/edit.png" alt="Edit" class="edit-icon" />
                             </button>
                         </td>
                         <td>@person.PersonName</td>
-                        <td>@person.Email</td>
-                        <td>@person.PhoneNo</td>
                         <td>@person.PersonCategory</td>
-                        <td>@person.PaymentNoteName</td>
-                        <td>@person.ForeignCode</td>
-                        
+                        <td>@person.PaymentNote</td>
                     </tr>
                 }
             }
             else
             {
                 <tr>
-                    <td colspan="7" class="text-center">No records found</td>
-                    
+                    <td colspan="7" class="text-center">Data tidak tersedia</td>
                 </tr>
             }
         </tbody>
@@ -76,6 +67,7 @@
         height: 16px;
         vertical-align: middle;
     }
+
     table.person-table.table {
         background-color: var(--brown) !important;
         color: var(--light-brown) !important;
@@ -121,7 +113,7 @@
 </style>
 @code {
     [Parameter]
-    public List<Customer> People { get; set; } = new();
+    public IEnumerable<OrderCustomer> People { get; set; }
 
     [Inject]
     public ILocalStorageService LocalStorage { get; set; }
@@ -129,11 +121,12 @@
     [Inject]
     public NavigationManager NavigationManager { get; set; }
 
-    private async Task EditCustomer(string personid)
+    private async Task EditCustomer(OrderCustomer person)
     {
-        await LocalStorage.SetItemAsync("customerid", personid);
-        NavigationManager.NavigateTo($"/customer/edit");
+        await LocalStorage.SetItemAsync("selectedOrderCustomerId", person.PersonId.ToString());
+        await LocalStorage.SetItemAsync("customerData", person);
+        NavigationManager.NavigateTo($"/neworderdetail/");
     }
 
-   
+
 }

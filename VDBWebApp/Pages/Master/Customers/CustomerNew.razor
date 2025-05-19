@@ -15,7 +15,6 @@
     <h1>New Customer</h1>
     <EditForm Model="@customer" OnValidSubmit="@ShowSaveConfirmation">
         <DataAnnotationsValidator />
-        <ValidationSummary />
 
         <div class="mb-3">
             <label for="PersonName" class="form-label">Customer Name</label>
@@ -40,7 +39,7 @@
         </div>
 
         <div class="mb-3">
-            <label for="PhoneNo" class="form-label">Phone No</label>
+            <label for="PhoneNo" class="form-label">Phone Number</label>
             <InputText id="PhoneNo" class="form-control" @bind-Value="customer.PhoneNo" placeholder="Customer Phone Number" />
             <ValidationMessage For="@(() => customer.PhoneNo)" />
         </div>
@@ -108,9 +107,14 @@
 
         <div class="mb-3">
             <label for="StreetAddress" class="form-label">Street Address</label>
-            <InputText id="StreetAddress" class="form-control" @bind-Value="customer.StreetAddress" 
-                       readonly @onclick="ShowAddressLookupModal" placeholder="Choose and fill address"  />
-            <ValidationMessage For="@(() => customer.StreetAddress)" />
+            <div class="input-group mb-1">
+                <InputText id="StreetAddress" class="form-control" @bind-Value="customer.StreetAddress" 
+                           readonly  placeholder="Choose and fill address"  />
+                <button class="btn btn-outline-secondary" @onclick="ShowAddressLookupModal" type="button" title="Find Address">
+                    <img src="images/material/search.png" alt="Lookup" style="width: 16px; height: 16px;" />
+                </button>
+                <ValidationMessage For="@(() => customer.StreetAddress)" />
+            </div>
         </div>
 
         <div class="mb-3">
@@ -224,19 +228,18 @@
 
         var Data = await CustomerService.SaveCustomer(customer);
         // Implementasikan logika penyimpanan customer di sini (misalnya, call API)
-        Console.WriteLine("Saving customer...");
-        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(customer)); // Log data yang akan disimpan
+
 
         // Simulasikan penyimpanan
         await Task.Delay(500);
         isLoading = false;
-        SaveConfirmationModal?.Show("Data berhasil di simpan", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
+        SaveConfirmationModal?.Show("Data saved successfully", "bi bi-check-circle", 0, EventCallback.Factory.Create(this, SuccessConfirmation), "Ok", false);
 
     }
 
     private void ShowSaveConfirmation()
     {
-        SaveConfirmationModal?.Show("Apakah Anda yakin ingin Menyimpan?", "oi oi-warning", 2, EventCallback.Factory.Create(this, SaveCustomer), "Save", true, "Cancel");
+        SaveConfirmationModal?.Show("Do you want to save new customer?", "oi oi-warning", 2, EventCallback.Factory.Create(this, SaveCustomer), "Yes", true, "No");
     }
 
     private void SuccessConfirmation()

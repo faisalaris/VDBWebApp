@@ -14,60 +14,88 @@
 @inject NavigationManager Navigation
 
 <div class="container">
-    <h3>Choose Customer</h3>
+
     
-    <div class="product-grid">
-        @if (orderCustomers != null && orderCustomers.Any())
-        {
-            @foreach (var item in orderCustomers)
-            {
-                <div class="product-card">
-                    <h4 class="product-title">@item.PersonName</h4>
-                    <p class="product-sku">@item.PersonCategory</p>
-                    <p class="product-sku">@item.PaymentNote</p>
-                    <button class="btn btn-primary product-detail-button" @onclick="() => GotoOrder(item)">Choose</button>
-                </div>
-            }
-        }
-        else if (loading)
-        {
-            <p class="loading-text">Loading data...</p>
-        }
-        else
-        {
-            <p class="no-product-text">No data found! 😞</p>
-        }
+    <div class="search-bar-container">
+        <h1 class="product-page-title">Choose Customers</h1>
+        <input type="text"
+               placeholder="Search Customer..."
+               @bind="customerSearchTerm"
+               @bind:event="oninput" 
+               maxlength="50"
+               class="product-search-input" />
     </div>
+   
+
+<VDBWebApp.Pages.Transaction.Admin.Admin_Component.NewOrder_grid People="FilteredCustomer" />
+
 </div>
+
 
 @code {
 
-        private List<Genset> Gensets = new List<Genset>();
-        private List <OrderCustomer> orderCustomers = new List<OrderCustomer>();
-        private bool showModal = false;
+    private List<Genset> Gensets = new List<Genset>();
+    private List <OrderCustomer> orderCustomers = new List<OrderCustomer>();
+    private bool showModal = false;
     private bool loading = false;
+    private string search = "";
+    private int page = 1;
+    private string customerSearchTerm = "";
 
-        private bool showAddModal = false;
-        private Genset selectedGenset = new();
-        private string gtypepar = "01";
+    private bool showAddModal = false;
+    private Genset selectedGenset = new();
+    private string gtypepar = "01";
 
-        protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchData();
+    }
+
+    private async Task FetchData()
+    {
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var data = await OrderService.GetListCustToOrder();
+
+        if (!string.IsNullOrEmpty(data))
         {
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var data = await OrderService.GetListCustToOrder();
-
-            if (!string.IsNullOrEmpty(data))
-            {
-                orderCustomers = JsonSerializer.Deserialize<List<OrderCustomer>>(data, options) ?? new List<OrderCustomer>();
-            }
+            orderCustomers = JsonSerializer.Deserialize<List<OrderCustomer>>(data, options) ?? new List<OrderCustomer>();
         }
+        
+    }
 
     private async Task GotoOrder(OrderCustomer order)
+    {
+        await LocalStorage.SetItemAsync("selectedOrderCustomerId", order.PersonId.ToString());
+        await LocalStorage.SetItemAsync("customerData", order);
+        Navigation.NavigateTo($"/neworderdetail/");
+    }
+
+    private async Task HandleSearch(ChangeEventArgs e)
+    {
+        string value = e.Value?.ToString() ?? "";
+        value = SanitizeInput(value);
+        search = value.Substring(0, Math.Min(value.Length, 50)); // Enforce length limit
+        page = 1; // Reset page on new search
+        await FetchData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            await LocalStorage.SetItemAsync("selectedOrderCustomerId", order.PersonId.ToString());
-            await LocalStorage.SetItemAsync("customerData", order);
-            Navigation.NavigateTo($"/neworderdetail/");
+            await JSRuntime.InvokeVoidAsync("observeElement", ".person-table", DotNetObjectReference.Create(this));
         }
+    }
+
+    private string SanitizeInput(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        return System.Text.RegularExpressions.Regex.Replace(input, @"['"";-]", "").Replace("  ", " ").Trim();
+    }
+
+    private IEnumerable<OrderCustomer> FilteredCustomer => string.IsNullOrWhiteSpace(customerSearchTerm)
+    ? orderCustomers
+    : orderCustomers.Where(p => p.PersonName != null && p.PersonName.Contains(customerSearchTerm, StringComparison.OrdinalIgnoreCase));
 
 
 }

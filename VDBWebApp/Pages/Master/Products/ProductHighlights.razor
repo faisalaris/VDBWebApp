@@ -15,14 +15,14 @@
 @if (usertype == "ADMIN")
 {
     <div class="container">
-        <h1 class="product-page-title">Active List</h1>
+        <h1 class="product-page-title">Active Highlighted List</h1>
         @* Product Grid *@
         <div class="product-grid">
                 @if (ActivehighlightProducts != null && ActivehighlightProducts.Any())
                 {
                     @foreach (var product in ActivehighlightProducts)
                     {
-                        <div class="product-card">
+                    <div class="product-card" style="cursor: pointer;" @onclick="() => OnlickActionActive(product)">
                             @if (!string.IsNullOrEmpty(product.thumbnail))
                             {
                                 <img src="@product.thumbnail" alt="@product.item_name" class="product-image" />
@@ -53,14 +53,14 @@
     </div>
 
     <div class="container">
-        <h1 class="product-page-title">InActive List</h1>
+        <h1 class="product-page-title">Inactive Highlighted List</h1>
         @* Product Grid *@
         <div class="product-grid">
                 @if (InActivehighlightProducts != null && InActivehighlightProducts.Any())
                 {
                     @foreach (var product in InActivehighlightProducts)
                     {
-                        <div class="product-card">
+                    <div class="product-card" style="cursor: pointer;" @onclick="() => OnlickActionActive(product)">
                             @if (!string.IsNullOrEmpty(product.thumbnail))
                             {
                                 <img src="@product.thumbnail" alt="@product.item_name" class="product-image" />
@@ -142,6 +142,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        loading = true;
         var userData = await LocalStorage.GetItemAsync<List<Dictionary<string, string>>>("user");
         var userid = await LocalStorage.GetItemAsync<string>("userid");
 
@@ -163,9 +164,13 @@ else
             }       
         }
 
-        Console.WriteLine(Data);
 
+        loading = false;
     }
 
-
+    private async Task OnlickActionActive(HighlightProduct prd)
+    {
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "selectedProductId", prd.item_id);
+        Navigation.NavigateTo("/productdetail");
+    }
 }

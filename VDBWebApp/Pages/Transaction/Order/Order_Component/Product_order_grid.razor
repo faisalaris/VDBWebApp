@@ -8,6 +8,10 @@
     <table class="table table-striped table-bordered table-hover person-table">
         <thead class="table-header">
             <tr>
+                @if (UserType == "ADMIN" && Status == "NEW")
+                {
+                    <th>Action</th>
+                }
                 <th>No</th>
                 <th>SKU</th>
                 <th>Qty</th>
@@ -15,10 +19,6 @@
                 <th>Discount</th>
                 <th>Subtotal</th>
                 <th>Remark</th>
-                @if (UserType=="ADMIN" && Status =="NEW")
-                {
-                    <th>Action</th>
-                }
             </tr>
         </thead>
         <tbody>
@@ -29,6 +29,19 @@
                 {
 
                     <tr>
+                        @if (UserType == "ADMIN" && Status == "NEW")
+                        {
+                            <td>
+                                <div class="d-flex mb-2" style="gap: 10px;">
+                                    <button class="btn btn-sm btn-outline-primary edit-button" @onclick="() => EditCustomer(productorder)" title="Edit">
+                                        <img src="images/material/edit.png" alt="Edit" class="edit-icon" />
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary edit-button" @onclick="() => DeleteCustomer(productorder)" title="Delete">
+                                        <img src="images/material/delete.png" alt="delete" class="edit-icon" />
+                                    </button>
+                                </div>
+                            </td>
+                        }
                         <td>@seq</td>
                         <td>@productorder.Item_Name</td>
                         <td>@productorder.QtyNum</td>
@@ -36,19 +49,7 @@
                         <td>@productorder.DiscAmount.ToString("N2")</td>
                         <td>@productorder.SubTotalAmount.ToString("N2")</td>
                         <td>@productorder.Remark</td>
-                        @if (UserType == "ADMIN" && Status == "NEW")
-                        {
-                          <td>
-                            <div class="d-flex mb-2" style="gap: 10px;">
-                            <button class="btn btn-sm btn-outline-primary edit-button" @onclick="() => EditCustomer(productorder)" title="Edit">
-                                <img src="images/material/edit.png" alt="Edit" class="edit-icon" />
-                            </button>
-                                <button class="btn btn-sm btn-outline-primary edit-button" @onclick="() => DeleteCustomer(productorder)" title="Delete">
-                                    <img src="images/material/delete.png" alt="delete" class="edit-icon" />
-                                </button>
-                            </div>
-                          </td>
-                        }
+                        
                     </tr>
                     seq++;                  
                 }
@@ -56,7 +57,7 @@
             else
             {
                 <tr>
-                    <td colspan="7" class="text-center">Data tidak tersedia</td>
+                    <td colspan="7" class="text-center">No data has been entered yet</td>
                 </tr>
             }
         </tbody>
