@@ -16,10 +16,14 @@
 
 <h3 class="text-center mb-4">My Products</h3>
 
-<div class="d-flex justify-content-center mb-3">
-    <button class="btn btn-primary me-4" @onclick="() => ShowCart()">Cart</button>
-    <button class="btn btn-secondary" @onclick="() => ShowWhish()">Whislist</button>
-</div>
+<div class="container">
+    <div class="tab-buttons justify-content-center mx-auto mb-4">
+        <div class="tab-buttons d-flex mb-3">
+                <button class="btn @GetTabButtonClass(isCart)" @onclick="() => ShowCart()">Cart</button>
+                <button class="btn @GetTabButtonClass(isWish)" @onclick="() => ShowWhish()">Whislist</button>
+        </div>
+    </div>
+
 
 
 @if (isCart)
@@ -45,7 +49,7 @@
         }
         else
         {
-            <p class="text-muted text-center">Your cart is empty.</p>
+            <p class="text-muted text-center">Your cart is empty, please go to etalase.</p>
         }
     </div>
   </div>
@@ -73,19 +77,20 @@ else if (isWish)
   </div>
 }
 
-<div class="d-flex justify-content-center mb-3">
-    @if(isCart)
-    {
-        <button class="btn btn-outline-danger me-4" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, ActionDeleteCart),msgDelete)">Clear Carts</button>
-        <button class="btn btn-outline-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, ActionOrder),msgOrder)">Submit Order</button>
-    }
-    else if (isWish)
-    {
-        <button class="btn btn-outline-danger me-4" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, ActionDeleteWish),msgDelete)">Clear Whislist</button>
-    }
-    
-</div>
+    <div class="d-flex justify-content-center mb-3">
+        @if (isCart)
+        {
+            <button class="btn btn-outline-danger me-4" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, ActionDeleteCart),msgDelete)">Clear Carts</button>
+            <button class="btn btn-outline-success" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, ActionOrder),msgOrder)">Submit Order</button>
+        }
+        else if (isWish)
+        {
+            <button class="btn btn-outline-danger me-4" @onclick="() => ShowSaveConfirmation(EventCallback.Factory.Create(this, ActionDeleteWish),msgDelete)">Clear Whislist</button>
+        }
 
+    </div>
+
+</div>
 @if (isLoadingWish)
 {
     <ProgressCart LoadingImageUrl="images/material/wish_gif.gif" />
@@ -362,5 +367,40 @@ else if (isWish)
             messageNo                     // cancel button label
         );
     }
+
+    private string GetTabButtonClass(bool isActive)
+    {
+        return isActive
+            ? "btn-primary active-tab me-3"
+            : "btn-primary me-3";
+    }
     
 }
+
+<style>
+    .tab-buttons {
+        display: flex;
+        width: 100%;
+        max-width: 800px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+        .tab-buttons button {
+            flex: 1;
+            padding: 10px 0;
+            font-weight: bold;
+            border: 1px solid var(--dark-brown);
+            background-color: var(--warm-white);
+            color: var(--dark-brown);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .tab-buttons .active-tab {
+            background-color: var(--dark-brown);
+            color: var(--warm-white);
+        }
+
+
+</style>
